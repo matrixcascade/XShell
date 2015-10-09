@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CubeSocket", "CubeSocket\CubeSocket.vcxproj", "{45402DE1-EC77-4AEF-B737-FF9FE2485F37}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RemoteClient", "RemoteClient\RemoteClient.vcxproj", "{F4CD5853-6C1C-4061-B387-5928469B5540}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RemoteServer", "RemoteServer\RemoteServer.vcxproj", "{EB9BE251-C214-4478-A65A-6F72CEEAB8B0}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RemoteControlller", "RemoteControlller\RemoteControlller.vcxproj", "{43A7D3AB-5B6A-442D-AC52-0E222F565B0E}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{45402DE1-EC77-4AEF-B737-FF9FE2485F37}.Debug|Win32.ActiveCfg = Debug|Win32
+		{45402DE1-EC77-4AEF-B737-FF9FE2485F37}.Debug|Win32.Build.0 = Debug|Win32
+		{45402DE1-EC77-4AEF-B737-FF9FE2485F37}.Release|Win32.ActiveCfg = Release|Win32
+		{45402DE1-EC77-4AEF-B737-FF9FE2485F37}.Release|Win32.Build.0 = Release|Win32
+		{F4CD5853-6C1C-4061-B387-5928469B5540}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F4CD5853-6C1C-4061-B387-5928469B5540}.Debug|Win32.Build.0 = Debug|Win32
+		{F4CD5853-6C1C-4061-B387-5928469B5540}.Release|Win32.ActiveCfg = Release|Win32
+		{F4CD5853-6C1C-4061-B387-5928469B5540}.Release|Win32.Build.0 = Release|Win32
+		{EB9BE251-C214-4478-A65A-6F72CEEAB8B0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{EB9BE251-C214-4478-A65A-6F72CEEAB8B0}.Debug|Win32.Build.0 = Debug|Win32
+		{EB9BE251-C214-4478-A65A-6F72CEEAB8B0}.Release|Win32.ActiveCfg = Release|Win32
+		{EB9BE251-C214-4478-A65A-6F72CEEAB8B0}.Release|Win32.Build.0 = Release|Win32
+		{43A7D3AB-5B6A-442D-AC52-0E222F565B0E}.Debug|Win32.ActiveCfg = Debug|Win32
+		{43A7D3AB-5B6A-442D-AC52-0E222F565B0E}.Debug|Win32.Build.0 = Debug|Win32
+		{43A7D3AB-5B6A-442D-AC52-0E222F565B0E}.Release|Win32.ActiveCfg = Release|Win32
+		{43A7D3AB-5B6A-442D-AC52-0E222F565B0E}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
