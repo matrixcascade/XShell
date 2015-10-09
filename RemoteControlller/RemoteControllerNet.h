@@ -1,5 +1,5 @@
 #pragma once
-#include "Cube_SocketUDP.h"
+#include "../CubeSocket/inc/Cube_SocketUDP.h"
 class RemoteControllerNet :
 	public Cube_SocketUDP
 {

@@ -38,7 +38,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>D:\BaiyProject\RemoteShell;D:\BaiyProject\RemoteShell\Common\inc;D:\BaiyProject\RemoteShell\CubeSocket\inc;$(IncludePath)</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <IncludePath>D:\BaiyProject\RemoteShell;D:\BaiyProject\RemoteShell\Common\inc;D:\BaiyProject\RemoteShell\CubeSocket\inc;$(IncludePath)</IncludePath>

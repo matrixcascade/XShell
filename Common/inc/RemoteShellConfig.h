@@ -5,7 +5,7 @@
 //////////////////////////////////////////////////////////////////////////////////////
 
 /*				Server					*/
-#define      REMOTESHELL_SERVER_IPADDR   "127.0.0.1"
+#define      REMOTESHELL_SERVER_IPADDR   "112.74.110.245"
 #define      REMOTESHELL_SERVER_PORT	   7613
 #define      REMOTESHELL_SERVER_PASSWORD  "admin"
 

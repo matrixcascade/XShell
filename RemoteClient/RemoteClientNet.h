@@ -1,6 +1,7 @@
 #pragma once
-#include "RemoteShellNetPacket.h"
-#include "cube_socketudp.h"
+#include "../Common/inc/RemoteShellNetPacket.h"
+#include "../Common/inc/RemoteShellConfig.h"
+#include "../CubeSocket/inc/Cube_SocketUDP.h"
 
 #define  REMOTECLIENTHEARTBEATE_TICK_COUT   5000
 

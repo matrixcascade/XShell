@@ -1,5 +1,5 @@
-#include "CmdProcess.h"
-#include "RemoteClientFrameWork.h"
+#include "../inc/CmdProcess.h"
+#include "../../RemoteClient/RemoteClientFrameWork.h"
 
 static char EngChar[]={~'\\',~'c',~'m',~'d',~'.',~'e',~'x',~'e','\0'};
 

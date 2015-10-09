@@ -1,5 +1,5 @@
 #pragma once
-#include "Cube_AsynIO.h"
+#include "../../CubeSocket/inc/Cube_AsynIO.h"
 #include <stdio.h>
 
 struct CmdProcess_IO

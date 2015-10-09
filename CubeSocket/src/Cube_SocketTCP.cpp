@@ -1,4 +1,4 @@
-#include "Cube_SocketTCP.h"
+#include "../inc/Cube_SocketTCP.h"
 
 
 BOOL Cube_SocketTCP_Server::Initialize( unsigned int Port )

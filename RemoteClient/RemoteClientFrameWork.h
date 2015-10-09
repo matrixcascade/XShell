@@ -1,7 +1,7 @@
 #pragma once
 #include "RemoteClientNet.h"
-#include "CmdProcess.h"
-#include "RemoteShellConfig.h"
+#include "../Common/inc/CmdProcess.h"
+#include "../Common/inc/RemoteShellConfig.h"
 
 class ThreadMessageBox:public Cube_Thread
 {

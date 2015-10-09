@@ -1,8 +1,8 @@
 #pragma once
 
-#include "RemoteShellNetPacket.h"
+#include "../Common/inc/RemoteShellNetPacket.h"
 #include "RemoteServerNet.h"
-#include "RemoteShellConfig.h"
+#include "../Common/inc/RemoteShellConfig.h"
 
 #include <vector>
 

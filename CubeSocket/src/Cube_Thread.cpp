@@ -1,4 +1,4 @@
-#include "Cube_Thread.h"
+#include "../inc/Cube_Thread.h"
 
 void __Cube_ThreadProcessFunc(void *p)
 {

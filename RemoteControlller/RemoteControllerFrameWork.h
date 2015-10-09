@@ -1,9 +1,9 @@
 #pragma once
 
-#include "RemoteControllerNet.h"
+#include "../RemoteControlller/RemoteControllerNet.h"
 #include "Cube_Grammar.h"
-#include "RemoteShellConfig.h"
-#include "RemoteShellNetPacket.h"
+#include "../Common/inc/RemoteShellConfig.h"
+#include "../Common/inc/RemoteShellNetPacket.h"
 
 #define  REMOTECONTROLLER_FSM_DISCONNECT 0
 #define  REMOTECONTROLLER_FSM_NORMAL     1
