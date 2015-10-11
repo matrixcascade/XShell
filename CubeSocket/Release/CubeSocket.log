@@ -1,0 +1,22 @@
+﻿生成启动时间为 2015/10/10 20:48:03。
+     1>项目“G:\XShell\CubeSocket\CubeSocket.vcxproj”在节点 2 上(build 个目标)。
+     1>InitializeBuildStatus:
+         正在创建“Release\CubeSocket.unsuccessfulbuild”，因为已指定“AlwaysCreate”。
+       ClCompile:
+         F:\Program Files (x86)\VS\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D _MBCS /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt src\Cube_SocketTCP.cpp src\Cube_SocketUDP.cpp src\Cube_Thread.cpp
+         Cube_SocketTCP.cpp
+         Cube_SocketUDP.cpp
+         Cube_Thread.cpp
+       Lib:
+         F:\Program Files (x86)\VS\VC\bin\Lib.exe /OUT:"G:\XShell\Release\CubeSocket.lib" /NOLOGO /LTCG Release\Cube_SocketTCP.obj
+         Release\Cube_SocketUDP.obj
+         Release\Cube_Thread.obj
+         CubeSocket.vcxproj -> G:\XShell\Release\CubeSocket.lib
+       FinalizeBuildStatus:
+         正在删除文件“Release\CubeSocket.unsuccessfulbuild”。
+         正在对“Release\CubeSocket.lastbuildstate”执行 Touch 任务。
+     1>已完成生成项目“G:\XShell\CubeSocket\CubeSocket.vcxproj”(build 个目标)的操作。
+
+生成成功。
+
+已用时间 00:00:00.64

