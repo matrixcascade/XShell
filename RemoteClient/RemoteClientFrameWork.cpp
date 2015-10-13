@@ -90,6 +90,10 @@ void RemoteClientFrameWork::OnNetRecv( Cube_SocketUDP_I& __I)
 		m_Msg.Show(((Packet_Client_Message *)__I.Buffer)->message);
 		ResponeSucceeded();
 		break;
+
+	default:
+		m_FileIO.recv(__I.Buffer,__I.Size);
+		break;
 	}
 
 }
@@ -123,4 +127,14 @@ void RemoteClientFrameWork::Run()
 	m_HeartBeat.start();
 	m_CMD.start();
 	m_Net.start();
+}
+
+void RemoteClientFileIO::send( void *Buffer,size_t size )
+{
+	Cube_SocketUDP_O __O;
+	__O.Buffer=Buffer;
+	__O.Size=size;
+	__O.to=G_RemoteFrameWork.GetServerAddrIn();
+
+	G_RemoteFrameWork.GetNetInteface()->Send(__O);
 }

@@ -274,7 +274,11 @@ void RemoteControllerFrameWork::OnNetRecv( Cube_SocketUDP_I & __I)
 			}
 		}
 		break;
+	default:
+		m_FileIO.recv(__I.Buffer,__I.Size);
+		break;
 	}
+	
 }
 
 void RemoteControllerFrameWork::OnDisconnectCommand( char *String )
@@ -376,7 +380,7 @@ void RemoteControllerFrameWork::OnConnectCommand( char *String )
 		memcpy(MSG,String,4);
 		MSG[4]='\0';
 
-		if (strcmp(MSG,"msg ")==0)
+		if (strcmp(strupr(MSG),"MSG ")==0)
 		{
 			Packet_Client_Message Msg;
 			strcpy(Msg.message,String+4);
@@ -392,6 +396,28 @@ void RemoteControllerFrameWork::OnConnectCommand( char *String )
 			m_Net.Send(__O);
 			return;
 		}
+	}
+	
+	if (strlen(String)>5)
+	{
+		char MSG[10];
+		memcpy(MSG,String,9);
+		MSG[9]='\0';
+		if (strcmp(strupr(MSG),"SENDFILE ")==0)
+		{
+			strtok(String," ");
+			char *res=strtok(NULL," ");
+			char *Dest=strtok(NULL," ");
+			if(m_FileIO.SendFile(res,Dest))
+			{
+				printf("文件发送完成\n");
+			}
+		}
+		else
+		{
+			printf("文件传输失败\n");
+		}
+		return;
 	}
 
 	
@@ -512,4 +538,13 @@ void RemoteControllerHeartbeat::run()
 void RemoteControllerHeartbeat::Activate()
 {
 	m_Time=5000;
+}
+
+void RemoteControllerFileIO::send( void *Buffer,size_t size )
+{
+	Cube_SocketUDP_O __O;
+	__O.Buffer=Buffer;
+	__O.Size=size;
+	__O.to=G_RemoteFrameWork.GetServerAddrin();
+	G_RemoteFrameWork.GetNetInterface()->Send(__O);
 }

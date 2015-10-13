@@ -68,6 +68,9 @@
     <ProjectReference Include="..\CubeSocket\CubeSocket.vcxproj">
       <Project>{45402de1-ec77-4aef-b737-ff9fe2485f37}</Project>
     </ProjectReference>
+    <ProjectReference Include="..\ParallelFileTransfer\ParallelFileTransfer.vcxproj">
+      <Project>{27b996d9-77a3-465a-ac46-60e9f19d8a76}</Project>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\inc\RemoteShellConfig.h" />

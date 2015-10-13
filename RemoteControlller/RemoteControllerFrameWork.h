@@ -4,6 +4,7 @@
 #include "Cube_Grammar.h"
 #include "../Common/inc/RemoteShellConfig.h"
 #include "../Common/inc/RemoteShellNetPacket.h"
+#include "../ParallelFileTransfer/ParalleFileTransfer.h"
 
 #define  REMOTECONTROLLER_FSM_DISCONNECT 0
 #define  REMOTECONTROLLER_FSM_NORMAL     1
@@ -23,6 +24,12 @@ public:
 	void Activate();
 private:
 	int m_Time;
+};
+
+class RemoteControllerFileIO:public ParalleFileTransfer
+{
+public:
+	void send(void *Buffer,size_t size) override;
 };
 
 
@@ -49,6 +56,9 @@ public:
 	void OnNetRecv(Cube_SocketUDP_I &);
 	void OnEmitControllerHeartbeat();
 	void OnPrintLocation();
+
+	RemoteControllerNet *GetNetInterface(){return &m_Net;}
+	SOCKADDR_IN			 GetServerAddrin(){return m_ServerAddrin;}
 	unsigned int              m_ExecFsm;
 	unsigned int			  m_FSM;
 private:
@@ -64,6 +74,8 @@ private:
 	RemoteControllerNet		  m_Net;
 	int						  m_RecvListCount;
 	int						  m_CurList;
+	RemoteControllerFileIO    m_FileIO;
+ 
 };
 
 extern RemoteControllerFrameWork G_RemoteFrameWork;

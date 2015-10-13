@@ -1,7 +1,7 @@
-﻿生成启动时间为 2015/10/12 21:00:29。
+﻿生成启动时间为 2015/10/13 21:54:50。
      1>项目“G:\XShell\RemoteClient\RemoteClient.vcxproj”在节点 2 上(build 个目标)。
      1>InitializeBuildStatus:
-         正在创建“Debug\RemoteClient.unsuccessfulbuild”，因为已指定“AlwaysCreate”。
+         正在对“Debug\RemoteClient.unsuccessfulbuild”执行 Touch 任务。
        ClCompile:
          所有输出均为最新。
        Link:
@@ -10,8 +10,8 @@
          Debug\RemoteClientNet.obj
          Debug\__Main.obj
          G:\XShell\Debug\CubeSocket.lib
+         G:\XShell\Debug\ParallelFileTransfer.lib
          G:\XShell\Debug\XInfester.lib
-         LINK : 没有找到 G:\XShell\Debug\RemoteClient.exe 或上一个增量链接没有生成它；正在执行完全链接
      1>LINK : warning LNK4098: 默认库“LIBCMTD”与其他库的使用冲突；请使用 /NODEFAULTLIB:library
          RemoteClient.vcxproj -> G:\XShell\Debug\RemoteClient.exe
        Manifest:
@@ -23,4 +23,4 @@
 
 生成成功。
 
-已用时间 00:00:00.75
+已用时间 00:00:00.26
