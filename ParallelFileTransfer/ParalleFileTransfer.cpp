@@ -1,96 +1,107 @@
 #include "ParalleFileTransfer.h"
 
-
-ParalleFileTransfer::ParalleFileTransfer(void)
+size_t ParalleFileTransfer::GetFileSize( const char *fileName )
 {
-	m_CacheBuffer=NULL;
-	m_BlockMark=NULL;
-	m_Mode=PARALLELFILE_MODE_NONE;
+	FILE *pf;
+	size_t Size;
+	if (pf=fopen(fileName,"rb"))
+	{
+		fseek(pf,0,SEEK_END);
+		Size=ftell(pf);
+		fclose(pf);
+		return Size;
+	}
+	return 0;  //Error;
 }
 
 
-ParalleFileTransfer::~ParalleFileTransfer(void)
-{
-	free();
-}
 
 void ParalleFileTransfer::free()
 {
+
+	m_FSM=PARALLELFILE_PACKET_FSM_STANDBY;
+	m_Mode=PARALLELFILE_MODE_NONE;
+	m_sumBlocksCount=0;
+	m_CacheSize=0;
+	
+	
 	if (m_CacheBuffer)
 	{
 		delete [] m_CacheBuffer;
 		m_CacheBuffer=NULL;
 	}
-
+	
 	if (m_BlockMark)
 	{
 		delete [] m_BlockMark;
 		m_BlockMark=NULL;
 	}
-	m_BlocksCount=0;
-	m_CacheSize=0;
-
-	m_FSM=PARALLELFILE_PACKET_FSM_STANDBY;
-	m_FSM=PARALLELFILE_MODE_NONE;
 }
 
-void ParalleFileTransfer::release()
+bool ParalleFileTransfer::InitBuffer( size_t size )
 {
-	free();
+	m_CacheSize=size;
+	m_CacheBuffer=new unsigned char[m_CacheSize];
+	if (!m_CacheBuffer)
+	{
+		free();
+		return false;
+	}
+	//calculate Blocks count
+	m_sumBlocksCount=m_CacheSize%PARALLELFILETRANSFER_BLOCK_SIZE?\
+		m_CacheSize/PARALLELFILETRANSFER_BLOCK_SIZE+1:\
+		m_CacheSize/PARALLELFILETRANSFER_BLOCK_SIZE;
+	
+	m_BlockMark=new unsigned char[m_sumBlocksCount];
+	if (!m_BlockMark)
+	{
+		free();
+		return false;
+	}
+	
+	//Initialize block marks
+	memset(m_BlockMark,0,m_sumBlocksCount);
+
+	return true;
 }
 
-size_t ParalleFileTransfer::GetFileSize( const char *fileName )
+void ParalleFileTransfer_Master::SendFileThread( const char *resFileName,const char *DestFileName )
 {
-		FILE *pf;
-		size_t Size;
-		if (pf=fopen(fileName,"rb"))
-		{
-			fseek(pf,0,SEEK_END);
-			Size=ftell(pf);
-			fclose(pf);
-			return Size;
-		}
-		return 0;  //Error;
-}
-
-bool ParalleFileTransfer::SendFile( const char *ResfileName,const char *SendTo )
-{
-	assert(ResfileName!=NULL&&SendTo!=NULL);
+	assert(resFileName!=NULL&&DestFileName!=NULL);
 	assert(m_FSM==PARALLELFILE_PACKET_FSM_STANDBY);
-	assert(m_FSM==PARALLELFILE_MODE_NONE);
+
 
 	PARALLELFILE_PACKET_CCMD_CONNECT ConnectPacket;
+	PARALLELFILE_PACKET_DONE         donepack;
 	//////////////////////////////////////////////////////////////////////////
 	//Data initialize & checkout
 	//////////////////////////////////////////////////////////////////////////
-	if(m_FSM!=PARALLELFILE_MODE_NONE)
-		return false;
-	
-	m_FSM=PARALLELFILE_MODE_SEND;
+	m_lastError=PARALLEFILE_LASTERROR_SUCCEED;
 
-	size_t m_CacheSize=this->GetFileSize(ResfileName);
+	
+
+	size_t m_CacheSize=this->GetFileSize(resFileName);
 	if (m_CacheSize==0)
 	{
-		return false;
+		m_lastError=PARALLEFILE_LASTERROR_FILEERR;
+		goto ERR;
 	}
-	if (strlen(SendTo)>=260)
+	if (strlen(DestFileName)>=260)
 	{
-		return false;
+		m_lastError=PARALLEFILE_LASTERROR_FILEERR;
+		goto ERR;
 	}
-
 	free();
+	m_Mode=PARALLELFILE_MODE_SEND;
 	//////////////////////////////////////////////////////////////////////////
 	///Initialize
 	//Mallocate Cache
 
-	m_CacheBuffer=new unsigned char[m_CacheSize];
-	if (!m_CacheBuffer)
-	{
-		goto ERR;
-	}
+	InitBuffer(m_CacheSize);
 
+	//////////////////////////////////////////////////////////////////////////
 	//Read file to memory
-	FILE *pf=fopen(ResfileName,"rb");
+	FILE *pf=fopen(resFileName,"rb");
 	unsigned char *	   pCache=m_CacheBuffer;
 	size_t SumReadSize=m_CacheSize;
 	size_t ReadSize;
@@ -102,189 +113,229 @@ bool ParalleFileTransfer::SendFile( const char *ResfileName,const char *SendTo )
 		if (ReadSize==0)
 		{
 			fclose(pf);
+			m_lastError=PARALLEFILE_LASTERROR_FILEERR;
 			goto ERR;
 		}
 	}
 	fclose(pf);
 
-	//calculate Blocks count
-	m_BlocksCount=m_CacheSize%PARALLELFILETRANSFER_BLOCK_SIZE?\
-		m_CacheSize/PARALLELFILETRANSFER_BLOCK_SIZE+1:\
-		m_CacheSize/PARALLELFILETRANSFER_BLOCK_SIZE;
-	
-	m_BlockMark=new unsigned char[m_BlocksCount];
-	if (!m_BlockMark)
-	{
-		goto ERR;
-	}
-	
-	//Initialize block marks
-	for (int i=0;i<m_BlocksCount;i++)
-	{
-		m_BlockMark[i]=false;
-	}
+
 
 	//////////////////////////////////////////////////////////////////////////
 	//Try to connect
 	//////////////////////////////////////////////////////////////////////////
 	m_FSM=PARALLELFILE_PACKET_FSM_CONNECT;
 
-	
-	strcpy(ConnectPacket.FileName,SendTo);
+
+	strcpy(ConnectPacket.FileName,DestFileName);
 	ConnectPacket.size=m_CacheSize;
+	ConnectPacket.protocol=PARALLELFILE_PROTOCOL_SEND;
 	int Retry=5;
-	
+
 	while(Retry--)
 	{
 		send(&ConnectPacket,sizeof(ConnectPacket));
-		Sleep(100);
+		if (m_FSM==PARALLELFILE_PACKET_FSM_ERR)
+		{
+			m_lastError=PARALLEFILE_LASTERROR_CONNECTERR;
+			goto ERR;
+		}
+
 		if (m_FSM==PARALLELFILE_PACKET_FSM_TRANSLATING)
 		{
 			//Connect succeed
 			break;
 		}
-		Sleep(900);
-		if (m_FSM==PARALLELFILE_PACKET_FSM_TRANSLATING)
-		{
-			//Connect succeed
-			break;
-		}
+		Sleep(500);
 		if (Retry==0)
 		{
+			m_lastError=PARALLEFILE_LASTERROR_TIMEOUT;
 			goto ERR;
 		}
 	}
 	//////////////////////////////////////////////////////////////////////////
 	//Translating & Connection detected 
 	//////////////////////////////////////////////////////////////////////////
-	m_TimeOut=PARALLELFILE_COMMUNICATION_TIMEOUT;
+	m_SeekBegin=0;
+	m_IOBlocksCount=0;
+	m_lastUpdateTime=GetTickCount();
 
-	while (m_FSM==PARALLELFILE_PACKET_FSM_TRANSLATING)
+
+	while (m_FSM!=PARALLELFILE_PACKET_FSM_DONE)
 	{
-		m_TimeOut-=100;
-		Sleep(100);
-		if (m_TimeOut<=0)
+		size_t CurIndex=m_SeekBegin;
+
+		while (true)
 		{
-			goto ERR;
-		}
-	}
-
-	free();
-	return TRUE;
-
-ERR:
-	free();
-	return FALSE;
-}
-
-
-bool ParalleFileTransfer::initRecvFile( const char *fileName,size_t Size )
-{
-	PARALLELFILE_PACKET_CCMD_CONNECTREPLY Reply;
-
-	//////////////////////////////////////////////////////////////////////////
-	// initialize data
-	//////////////////////////////////////////////////////////////////////////
-	m_CacheSize=Size;
-
-	m_CacheBuffer=new unsigned char[Size];
-	if (!m_CacheBuffer)
-	{
-		goto ERR;
-	}
-
-	//calculate Blocks count
-	m_BlocksCount=m_CacheSize%PARALLELFILETRANSFER_BLOCK_SIZE?\
-		m_CacheSize/PARALLELFILETRANSFER_BLOCK_SIZE+1:\
-		m_CacheSize/PARALLELFILETRANSFER_BLOCK_SIZE;
-
-	m_BlockMark=new unsigned char[m_BlocksCount];
-	if (!m_BlockMark)
-	{
-		goto ERR;
-	}
-	
-	//Initialize block marks
-	for (int i=0;i<m_BlocksCount;i++)
-	{
-		m_BlockMark[i]=false;
-	}
-
-	strcpy(m_SaveTo,fileName);
-
-	
-	Reply.REPLY=PARALLELFILE_PACKET_CCMD_CONNECT_OK;
-	send(&Reply,sizeof(Reply));
-	return true;
-ERR:
-	free();
-	
-	Reply.REPLY=PARALLELFILE_PACKET_CCMD_CONNECT_OK;
-	send(&Reply,sizeof(Reply));
-	return false;
-}
-
-void ParalleFileTransfer::run()
-{
-	//////////////////////////////////////////////////////////////////////////
-	//Run thread for response seek
-	//////////////////////////////////////////////////////////////////////////
-	//Data Transmitting for Receive DATA
-	int SeekBegin=0;
-	int CurrentSekIndex;
-	m_TimeOut=PARALLELFILE_COMMUNICATION_TIMEOUT;
-	
-	//Request CycleData 
-	int StartIndex,BlockCount;
-	while (SeekBegin!=m_BlocksCount-1)
-	{
-		BlockCount=0;
-		CurrentSekIndex=SeekBegin;
-		
-		while (CurrentSekIndex<m_BlocksCount)
-		{
-			if (!m_BlockMark[CurrentSekIndex])
+			
+			if (CurIndex>=m_sumBlocksCount)
 			{
-				if (BlockCount==0)
+				break;
+			}
+			if(m_BlockMark)
+			{
+				if(m_BlockMark[CurIndex])
 				{
-					StartIndex=CurrentSekIndex;
+				CurIndex++;
+				continue;
 				}
-				BlockCount++;
 			}
 			else
 			{
-				if (CurrentSekIndex==SeekBegin)
-				{
-					SeekBegin++;
-				}
-				if (BlockCount!=0)
-				{
-					//Request for data packet
-					PARALLELFILE_PACKET_BIN_REQUEST request;
-					//Setup Packet
-					request._StartBlockIndex=StartIndex;
-					request.BlockCount=BlockCount;
-					send(&request,sizeof(request));
-				}
-				BlockCount=0;
+				goto ERR;
+			}
+			PARALLELFILE_PACKET_BIN bin;
+			bin.BlockIndex=CurIndex;
+			if(CurIndex!=m_sumBlocksCount-1)
+				bin.Size=PARALLELFILETRANSFER_BLOCK_SIZE;
+			else
+				bin.Size=m_CacheSize%PARALLELFILETRANSFER_BLOCK_SIZE;
+
+			if (m_CacheBuffer)
+			memcpy(bin.Buffer,m_CacheBuffer+CurIndex*PARALLELFILETRANSFER_BLOCK_SIZE,bin.Size);
+
+			send(&bin,sizeof(bin));
+			CurIndex++;
+
+			Sleep(5);
+
+			if (GetTickCount()>m_lastUpdateTime+PARALLELFILE_COMMUNICATION_TIMEOUT)
+			{
+				m_lastError=PARALLEFILE_LASTERROR_TIMEOUT;
+				goto ERR;
 			}
 		}
-		m_TimeOut-=1000;
-		Sleep(1000);
-		if (m_TimeOut==0)
+
+		if (GetTickCount()>m_lastUpdateTime+PARALLELFILE_COMMUNICATION_TIMEOUT)
 		{
-			//Time out
+			m_lastError=PARALLEFILE_LASTERROR_TIMEOUT;
 			goto ERR;
 		}
 	}
-	
-	//done & succeed
-	PARALLELFILE_PACKET_DONE DonePacket;
-	send(&DonePacket,sizeof(DonePacket));
-	
-	//Save memory to file
 
-	FILE *pf=fopen(m_SaveTo,"wb");
+	send(&donepack,sizeof(donepack));
+	free();
+	return ;
+
+ERR:
+	free();
+	return ;
+}
+void ParalleFileTransfer_Master::RecvFileThread( const char *destFileName,const char *SaveTo )
+{
+	assert(destFileName!=NULL&&SaveTo!=NULL);
+	assert(m_FSM==PARALLELFILE_PACKET_FSM_STANDBY);
+
+	PARALLELFILE_PACKET_DONE DonePacket;
+	PARALLELFILE_PACKET_CCMD_CONNECT ConnectPacket;
+	//////////////////////////////////////////////////////////////////////////
+	//Data initialize & checkout
+	//////////////////////////////////////////////////////////////////////////
+	m_lastError=PARALLEFILE_LASTERROR_SUCCEED;
+
+
+	if (strlen(destFileName)>=260)
+	{
+		m_lastError=PARALLEFILE_LASTERROR_FILEERR;
+		goto ERR;
+	}
+
+	//Try to Create file
+	FILE *pf=fopen(SaveTo,"wb");
+	if (pf==NULL)
+	{
+		goto ERR;
+	}
+	fclose(pf);
+
+
+	free();
+	m_Mode=PARALLELFILE_MODE_RECV;
+	//////////////////////////////////////////////////////////////////////////
+	//Query Remote file informations
+	//////////////////////////////////////////////////////////////////////////
+	
+
+	ConnectPacket.size=0;
+	ConnectPacket.protocol=PARALLELFILE_PROTOCOL_RECV;
+	strcpy(ConnectPacket.FileName,destFileName);
+	
+	int Retry=5;
+	
+	while(Retry--)
+	{
+		send(&ConnectPacket,sizeof(ConnectPacket));
+		if (m_FSM==PARALLELFILE_PACKET_FSM_ERR)
+		{
+			m_lastError=PARALLEFILE_LASTERROR_CONNECTERR;
+			goto ERR;
+		}
+		if (m_FSM==PARALLELFILE_PACKET_FSM_TRANSLATING)
+		{
+			//Connect succeed
+			break;
+		}
+		Sleep(500);
+
+		if (Retry==0)
+		{
+			m_lastError=PARALLEFILE_LASTERROR_TIMEOUT;
+			goto ERR;
+		}
+	}
+
+
+	//////////////////////////////////////////////////////////////////////////
+	//Query data
+	//////////////////////////////////////////////////////////////////////////
+	m_IOBlocksCount=0;
+	m_SeekBegin=0;
+	size_t CurrentSekIndex;
+	m_lastUpdateTime=GetTickCount();
+
+	//Request CycleData 
+
+	while (m_FSM!=PARALLELFILE_PACKET_FSM_DONE)
+	{
+		CurrentSekIndex=m_SeekBegin;
+
+		while (CurrentSekIndex<m_sumBlocksCount)
+		{
+			if (!m_BlockMark)
+			{
+				goto ERR;
+			}
+			if (!m_BlockMark[CurrentSekIndex])
+			{
+				//Request for data packet
+				PARALLELFILE_PACKET_BIN_REQUEST request;
+				//Setup Packet
+				request._StartBlockIndex=CurrentSekIndex;
+				request.BlockCount=1;
+				send(&request,sizeof(request));
+				Sleep(5);
+			}
+			
+			if (GetTickCount()>m_lastUpdateTime+PARALLELFILE_COMMUNICATION_TIMEOUT)
+			{
+				//Time out
+				m_lastError=PARALLEFILE_LASTERROR_TIMEOUT;
+				goto ERR;
+			}
+
+			CurrentSekIndex++;
+		}
+		
+	}
+	//////////////////////////////////////////////////////////////////////////
+	//done & succeed
+	//////////////////////////////////////////////////////////////////////////
+	send(&DonePacket,sizeof(DonePacket));
+
+	//////////////////////////////////////////////////////////////////////////
+	//Save memory to file
+	//////////////////////////////////////////////////////////////////////////
+	pf=fopen(SaveTo,"wb");
 	size_t SumWriteSize=m_CacheSize;
 	size_t WriteSize;
 	unsigned char *pCache=m_CacheBuffer;
@@ -296,117 +347,535 @@ void ParalleFileTransfer::run()
 		if (WriteSize==0)
 		{
 			fclose(pf);
+			m_lastError=PARALLEFILE_LASTERROR_FILEERR;
 			goto ERR;
 		}
 	}
 	fclose(pf);
 
+	free();
+	return;
 ERR:
 	free();
+	return;
 }
 
-void ParalleFileTransfer::recv( void *Buffer,size_t size )
+void ParalleFileTransfer_Master::recv( void *Buffer,size_t size )
 {
-	switch (m_Mode)
+	if (m_Mode==PARALLELFILE_MODE_SEND)
 	{
-	case PARALLELFILE_MODE_NONE:
-		OnModeNoneProcess(Buffer,size);
+		m_lastUpdateTime=GetTickCount();
+		OnSendModeRecvData(Buffer,size);
+	}
+	if (m_Mode==PARALLELFILE_MODE_RECV)
+	{
+		m_lastUpdateTime=GetTickCount();
+		OnRecvModeRecvData(Buffer,size);
+	}
+}
+
+void ParalleFileTransfer_Master::OnSendModeRecvData( void *Buffer,size_t size )
+{
+	//////////////////////////////////////////////////////////////////////////
+	//Send mode
+	//Packet: Connect reply &ACK  packet 
+	//////////////////////////////////////////////////////////////////////////
+	struct stMagicNumber 
+	{
+		unsigned int MagicNumber;
+	};
+	if (size<sizeof(stMagicNumber))
+	{
+		return;
+	}
+	stMagicNumber *p=(stMagicNumber *)Buffer;
+
+	switch(p->MagicNumber)
+	{
+	case  PARALLELFILE_MAGIC_CONNECTREPLY:
+		{
+			if (size!=sizeof(PARALLELFILE_PACKET_CCMD_CONNECTREPLY))
+			{
+				return;
+			}
+			if (m_FSM==PARALLELFILE_PACKET_FSM_TRANSLATING)
+			{
+				return;
+			}
+
+			PARALLELFILE_PACKET_CCMD_CONNECTREPLY *pack=(PARALLELFILE_PACKET_CCMD_CONNECTREPLY*)Buffer;
+			if (pack->REPLY==PARALLELFILE_PACKET_CCMD_CONNECT_OK)
+			{
+				m_FSM=PARALLELFILE_PACKET_FSM_TRANSLATING;
+			}
+			else
+			{
+				m_FSM=PARALLELFILE_PACKET_FSM_ERR;
+			}
+
+		}
 		break;
-	case PARALLELFILE_MODE_SEND:
-		OnModeSendProcess(Buffer,size);
+	case  PARALLELFILE_MAGIC_BINACK:
+		{
+			if (size!=sizeof(PARALLELFILE_PACKET_BINACK))
+			{
+				return;
+			}
+			PARALLELFILE_PACKET_BINACK *pack=(PARALLELFILE_PACKET_BINACK *)Buffer;
+
+			if (pack->BlockIndex>=m_sumBlocksCount)
+			{
+				return;
+			}
+
+			if (!m_BlockMark)
+			{
+				return;
+			}
+
+			if (!m_BlockMark[pack->BlockIndex])
+			{
+				m_BlockMark[pack->BlockIndex]=1;
+				m_IOBlocksCount++;
+			}
+
+			if (pack->BlockIndex==m_SeekBegin)
+			{
+				m_SeekBegin++;
+			}
+
+			if (m_IOBlocksCount==m_sumBlocksCount)
+			{
+				m_FSM=PARALLELFILE_PACKET_FSM_DONE;
+			}
+		}
 		break;
-	case PARALLELFILE_MODE_RECV:
-		OnModeRecvProcess(Buffer,size);
+	}
+
+
+
+
+
+}
+
+void ParalleFileTransfer_Master::OnRecvModeRecvData( void *Buffer,size_t size )
+{
+	//////////////////////////////////////////////////////////////////////////
+	//Receive mode
+	//Packet: Connect reply &Bin  packet 
+	//////////////////////////////////////////////////////////////////////////
+
+	struct stMagicNumber 
+	{
+		unsigned int MagicNumber;
+	};
+	if (size<sizeof(stMagicNumber))
+	{
+		return;
+	}
+	stMagicNumber *p=(stMagicNumber *)Buffer;
+
+	switch(p->MagicNumber)
+	{
+	case  PARALLELFILE_MAGIC_CONNECTREPLY:
+		{
+			if (size!=sizeof(PARALLELFILE_PACKET_CCMD_CONNECTREPLY))
+			{
+				return;
+			}
+			PARALLELFILE_PACKET_CCMD_CONNECTREPLY *pack=(PARALLELFILE_PACKET_CCMD_CONNECTREPLY*)Buffer;
+			if (pack->REPLY==PARALLELFILE_PACKET_CCMD_CONNECT_OK)
+			{
+				InitBuffer(pack->Size);
+				m_FSM=PARALLELFILE_PACKET_FSM_TRANSLATING;
+			}
+			else
+			{
+				m_FSM=PARALLELFILE_PACKET_FSM_ERR;
+			}
+			
+		}
 		break;
-	default:
+	case  PARALLELFILE_MAGIC_BIN:
+		{
+			if (size!=sizeof(PARALLELFILE_PACKET_BIN))
+			{
+				return;
+			}
+			PARALLELFILE_PACKET_BIN *pack=(PARALLELFILE_PACKET_BIN *)Buffer;
+			if (pack->BlockIndex>=m_sumBlocksCount)
+			{
+				return;
+			}
+			if (!m_BlockMark)
+			{
+				return;
+			}
+
+
+			if (!m_BlockMark[pack->BlockIndex])
+			{
+				m_BlockMark[pack->BlockIndex]=1;
+				if(pack->BlockIndex<m_sumBlocksCount)
+				{
+					if(m_CacheBuffer)
+					memcpy(m_CacheBuffer+(pack->BlockIndex*PARALLELFILETRANSFER_BLOCK_SIZE),pack->Buffer,pack->Size);
+					else
+					{
+					if(pack->Size==m_CacheSize%PARALLELFILETRANSFER_BLOCK_SIZE)
+					if(m_CacheBuffer)
+					memcpy(m_CacheBuffer+(pack->BlockIndex*PARALLELFILETRANSFER_BLOCK_SIZE),pack->Buffer,pack->Size);
+					else
+					return;
+					}
+					m_IOBlocksCount++;
+				}
+			}
+
+			if (pack->BlockIndex==m_SeekBegin)
+			{
+				m_SeekBegin++;
+			}
+
+
+			if (m_IOBlocksCount==m_sumBlocksCount)
+			{
+				m_FSM=PARALLELFILE_PACKET_FSM_DONE;
+			}
+		}
+		break;
+	}
+}
+
+void ParalleFileTransfer_Master::RecvFile( const char *resFileName,const char *DestFileName )
+{
+	m_resfileName=(char *)resFileName;
+	m_DestFileName=(char *)DestFileName;
+	m_Mode=PARALLELFILE_MODE_RECV;
+	m_IsTranslationDone=false;
+	start();
+}
+
+void ParalleFileTransfer_Master::SendFile( const char *resFileName,const char *DestFileName )
+{
+	m_resfileName=(char *)resFileName;
+	m_DestFileName=(char *)DestFileName;
+	m_Mode=PARALLELFILE_MODE_SEND;
+	m_IsTranslationDone=false;
+	start();
+}
+
+void ParalleFileTransfer_Master::run()
+{
+	if (m_Mode==PARALLELFILE_MODE_SEND)
+	{
+		SendFileThread((const char *)m_resfileName,(const char *)m_DestFileName);
+	}
+	if (m_Mode==PARALLELFILE_MODE_RECV)
+	{
+		RecvFileThread((const char *)m_resfileName,(const char *)m_DestFileName);
+	}
+	m_IsTranslationDone=true;
+}
+
+ParalleFileTransfer_Master::ParalleFileTransfer_Master():ParalleFileTransfer()
+{
+	m_IsTranslationDone=true;
+}
+
+
+void ParalleFileTransfer_Slave::recv( void *Buffer,size_t size )
+{
+	if (m_Mode==PARALLELFILE_MODE_NONE)
+	{
+		m_lastUpdateTime=GetTickCount();
+		onNoneModeRecvProcess(Buffer,size);
+		return;
+	}
+
+	if (m_Mode==PARALLELFILE_MODE_SEND)
+	{
+		m_lastUpdateTime=GetTickCount();
+		OnSendModeRecvProcess(Buffer,size);
+		return;
+	}
+	if (m_Mode==PARALLELFILE_MODE_RECV)
+	{
+		m_lastUpdateTime=GetTickCount();
+		onRecvModeRecvProcess(Buffer,size);
 		return;
 	}
 }
 
-void ParalleFileTransfer::OnModeNoneProcess( void *Buffer,size_t size )
+
+void ParalleFileTransfer_Slave::onNoneModeRecvProcess( void *buffer,size_t size )
 {
-	//Only receive connection packet
-	PARALLELFILE_PACKET_CCMD_CONNECT Conn;
-	if (size==sizeof(PARALLELFILE_PACKET_CCMD_CONNECT))
-	{
-		PARALLELFILE_PACKET_CCMD_CONNECT *p=(PARALLELFILE_PACKET_CCMD_CONNECT *)Buffer;
-		if(p->MagicNumber=Conn.MagicNumber)
-		{
-			//Start block cycle thread If succeed. 
-			if(initRecvFile(p->FileName,p->size))
-				start();
-		}
-	}
-	return;
-}
-
-void ParalleFileTransfer::OnModeRecvProcess( void *Buffer,size_t size )
-{
-	//Only Binary packets allowed
-	PARALLELFILE_PACKET_BIN_REPLY rep;
-	if (size==sizeof(PARALLELFILE_PACKET_BIN_REPLY))
-	{
-		PARALLELFILE_PACKET_BIN_REPLY *p=(PARALLELFILE_PACKET_BIN_REPLY *)Buffer;
-		if(p->MagicNumber=rep.MagicNumber)
-		{
-			//Saving data to cache
-			if (!m_BlockMark[p->BlockIndex])
-			{
-				memcpy(m_CacheBuffer+(p->BlockIndex*PARALLELFILETRANSFER_BLOCK_SIZE),p->Buffer,p->Size);
-				m_BlockMark[p->BlockIndex]=true;
-			}
-			else
-			{
-				//This data is already be written
-			}
-			//Mark time
-			m_TimeOut=PARALLELFILE_COMMUNICATION_TIMEOUT;
-		}
-	}
-}
-
-void ParalleFileTransfer::OnModeSendProcess( void *Buffer,size_t size )
-{
-	//Response request or "Completed command"
-	PARALLELFILE_PACKET_BIN_REQUEST req;
-	if (size==sizeof(PARALLELFILE_PACKET_BIN_REQUEST))
-	{
-		PARALLELFILE_PACKET_BIN_REQUEST *p=(PARALLELFILE_PACKET_BIN_REQUEST *)Buffer;
-		if (p->MagicNumber==req.MagicNumber)
-		{
-			int startBlock=p->_StartBlockIndex;
-			int Blockcount=p->BlockCount;
-			for (int i=0;i<Blockcount;i++)
-			{
-				PARALLELFILE_PACKET_BIN_REPLY reply;
-				//Structure binary stream packets
-				if (startBlock+i==m_BlocksCount-1)//last block
-				{
-					reply.Size=m_CacheSize%PARALLELFILETRANSFER_BLOCK_SIZE;
-				}
-				else
-				{
-					reply.Size=PARALLELFILETRANSFER_BLOCK_SIZE;
-				}
-				memcpy(reply.Buffer,m_CacheBuffer+(PARALLELFILETRANSFER_BLOCK_SIZE*(startBlock+i)),reply.Size);
-				reply.BlockIndex=startBlock+i;
-
-				send(&reply,sizeof(reply));
-			}
-
-		}
-	}
-
+	//////////////////////////////////////////////////////////////////////////
+	//Connect packet & BIN packet
+	//////////////////////////////////////////////////////////////////////////
+	PARALLELFILE_PACKET_CCMD_CONNECTREPLY reply;
 	
-	if (size==sizeof(PARALLELFILE_PACKET_DONE))
+	struct stMagicNumber 
 	{
-		PARALLELFILE_PACKET_DONE done;
-		PARALLELFILE_PACKET_DONE *p=(PARALLELFILE_PACKET_DONE *)Buffer;
-		if (p->MagicNumber==done.MagicNumber)
+		unsigned int MagicNumber;
+	};
+	if (size<sizeof(stMagicNumber))
+	{
+		return;
+	}
+	stMagicNumber *p=(stMagicNumber *)buffer;
+	
+	switch(p->MagicNumber)
+	{
+	case PARALLELFILE_MAGIC_CONNECT:
 		{
-			//Translation completed
-			m_FSM=PARALLELFILE_PACKET_FSM_STANDBY;
+			if (size!=sizeof(PARALLELFILE_PACKET_CCMD_CONNECT))
+			{
+				return;
+			}
+			PARALLELFILE_PACKET_CCMD_CONNECT *connectPack=(PARALLELFILE_PACKET_CCMD_CONNECT*)buffer;
+			
+			
+			if (connectPack->protocol==PARALLELFILE_PROTOCOL_SEND)
+			{
+				if (strlen(connectPack->FileName)>=260)
+				{
+					//Try to Create file
+					FILE *pf=fopen(connectPack->FileName,"wb");
+					if (pf==NULL)
+					{
+						goto ERR;
+					}
+					fclose(pf);
+				}
+
+				if (!InitBuffer(connectPack->size))
+				{
+					goto ERR;
+				}	
+				//Switch to "MasterSend" mode
+				strcpy(m_RecvSaveTo,connectPack->FileName);
+				m_Mode=PARALLELFILE_MODE_RECV;
+				m_CurrentRecvBlockCount=0;
+
+
+			}
+			
+			if (connectPack->protocol==PARALLELFILE_PROTOCOL_RECV)
+			{
+
+				size_t m_CacheSize=this->GetFileSize(connectPack->FileName);
+				if (m_CacheSize==0)
+				{
+				m_lastError=PARALLEFILE_LASTERROR_FILEERR;
+				goto ERR;
+				}
+
+				if (strlen(connectPack->FileName)>=260)
+				{
+				m_lastError=PARALLEFILE_LASTERROR_FILEERR;
+				goto ERR;
+				}
+				free();
+				//////////////////////////////////////////////////////////////////////////
+				///Initialize
+				//Mallocate Cache
+
+				InitBuffer(m_CacheSize);
+	
+				//////////////////////////////////////////////////////////////////////////
+				//Read file to memory
+				FILE *pf=fopen(connectPack->FileName,"rb");
+				unsigned char *	   pCache=m_CacheBuffer;
+				size_t SumReadSize=m_CacheSize;
+				size_t ReadSize;
+				while(SumReadSize)
+				{
+				ReadSize=fread(pCache,1,SumReadSize,pf);
+				pCache+=ReadSize;
+				SumReadSize-=ReadSize;
+				if (ReadSize==0)
+				{
+				fclose(pf);
+				m_lastError=PARALLEFILE_LASTERROR_FILEERR;
+				goto ERR;
+				}
+				}
+				fclose(pf);
+				reply.Size=m_CacheSize;
+				
+				//switch to "MasterReceive" mode 
+				m_Mode=PARALLELFILE_MODE_SEND;
+				}	
+
+			reply.REPLY=PARALLELFILE_PACKET_CCMD_CONNECT_OK;
+			send(&reply,sizeof(reply));
+			m_lastUpdateTime=GetTickCount();
+			start();
+		}
+		break;
+	}
+	
+	return;
+ERR:
+	reply.REPLY=PARALLELFILE_PACKET_CCMD_CONNECT_FAILED;
+	send(&reply,sizeof(reply));
+	free();
+}
+
+
+void ParalleFileTransfer_Slave::onRecvModeRecvProcess( void *Buffer,size_t size )
+{
+	//////////////////////////////////////////////////////////////////////////
+	//BIN packet & done
+	//////////////////////////////////////////////////////////////////////////
+	
+	struct stMagicNumber 
+	{
+		unsigned int MagicNumber;
+	};
+	if (size<sizeof(stMagicNumber))
+	{
+		return;
+	}
+	stMagicNumber *p=(stMagicNumber *)Buffer;
+	
+	switch(p->MagicNumber)
+	{
+	case PARALLELFILE_MAGIC_BIN:
+		{
+			if (size!=sizeof(PARALLELFILE_PACKET_BIN))
+			{
+				return;
+			}
+			if (!m_BlockMark)
+			{
+				return;
+			}
+			PARALLELFILE_PACKET_BIN *binPack=(PARALLELFILE_PACKET_BIN*)Buffer;
+			if (!m_BlockMark[binPack->BlockIndex])
+			{
+				int cpysize;
+				if(binPack->BlockIndex!=m_sumBlocksCount-1)
+					cpysize=PARALLELFILETRANSFER_BLOCK_SIZE;
+				else
+					cpysize=m_CacheSize%PARALLELFILETRANSFER_BLOCK_SIZE;
+				
+				if(m_CacheBuffer)
+				memcpy(m_CacheBuffer+binPack->BlockIndex*PARALLELFILETRANSFER_BLOCK_SIZE,binPack->Buffer,cpysize);
+				m_BlockMark[binPack->BlockIndex]=1;
+				m_CurrentRecvBlockCount++;
+			}
+			//Response AckPacket
+			PARALLELFILE_PACKET_BINACK binAck;
+			binAck.BlockIndex=binPack->BlockIndex;
+
+			send(&binAck,sizeof(binAck));
+	
+			
+		}
+		break;
+	case PARALLELFILE_MAGIC_DONE:
+		{
+			if (size!=sizeof(PARALLELFILE_PACKET_DONE))
+			{
+				return;
+			}
+			//Done & Save data
+			//////////////////////////////////////////////////////////////////////////
+			//Save memory to file
+			//////////////////////////////////////////////////////////////////////////
+			FILE *pf=fopen(m_RecvSaveTo,"wb");
+			size_t SumWriteSize=m_CacheSize;
+			size_t WriteSize;
+			unsigned char *pCache=m_CacheBuffer;
+			while(SumWriteSize)
+			{
+				WriteSize=fwrite(pCache,1,SumWriteSize,pf);
+				pCache+=WriteSize;
+				SumWriteSize-=WriteSize;
+				if (WriteSize==0)
+				{
+					fclose(pf);
+					m_lastError=PARALLEFILE_LASTERROR_FILEERR;
+				}
+			}
+			fclose(pf);
+
+			//For freeThread
+			free();
+			terminate();
+		}
+		break;
+	}
+	
+}
+
+void ParalleFileTransfer_Slave::OnSendModeRecvProcess( void *Buffer,size_t size )
+{
+	struct stMagicNumber 
+	{
+		unsigned int MagicNumber;
+	};
+	if (size<sizeof(stMagicNumber))
+	{
+		return;
+	}
+	stMagicNumber *p=(stMagicNumber *)Buffer;
+
+	switch(p->MagicNumber)
+	{
+	case PARALLELFILE_MAGIC_BINREQUEST:
+		{
+
+			if (size!=sizeof(PARALLELFILE_PACKET_BIN_REQUEST))
+			{
+				return;
+			}
+			PARALLELFILE_PACKET_BIN_REQUEST *ReqPack=(PARALLELFILE_PACKET_BIN_REQUEST *)Buffer;
+
+			PARALLELFILE_PACKET_BIN bin;
+		
+			for(size_t CurIndex=ReqPack->_StartBlockIndex;CurIndex<ReqPack->_StartBlockIndex+ReqPack->BlockCount;CurIndex++)
+			{
+				//Structure binary stream packet
+				bin.BlockIndex=CurIndex;
+				if(CurIndex!=m_sumBlocksCount-1)
+					bin.Size=PARALLELFILETRANSFER_BLOCK_SIZE;
+				else
+					bin.Size=m_CacheSize%PARALLELFILETRANSFER_BLOCK_SIZE;
+
+				memcpy(bin.Buffer,m_CacheBuffer+CurIndex*PARALLELFILETRANSFER_BLOCK_SIZE,bin.Size);
+
+				send(&bin,sizeof(bin));
+			}
+			
+		}
+		break;
+	case PARALLELFILE_MAGIC_DONE:
+		{
+			if (size!=sizeof(PARALLELFILE_PACKET_DONE))
+			{
+				return;
+			}
+			//Done & Recover data
+			//for FreeThread
+			free();
+			terminate();
+		}
+		break;
+	}
+}
+
+void ParalleFileTransfer_Slave::run()
+{
+	while(true)
+	{
+		if (GetTickCount()>m_lastUpdateTime+PARALLELFILE_COMMUNICATION_TIMEOUT)
+		{
+			free();
+			break;
 		}
 	}
-
+	
 }

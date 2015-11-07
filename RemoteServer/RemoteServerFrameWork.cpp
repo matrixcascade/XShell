@@ -15,8 +15,8 @@ RemoteServerFrameWork::~RemoteServerFrameWork(void)
 void RemoteServerFrameWork::OnNetRecv( Cube_SocketUDP_I& __I)
 {
 	Packet *pPack=(Packet *)(__I.Buffer);
-	
-	
+
+
 	switch (pPack->TypeFLAG)
 	{
 	case PACKET_TYPEFLAG_CLIENT_HEARTBEAT:
@@ -91,6 +91,48 @@ void RemoteServerFrameWork::OnNetRecv( Cube_SocketUDP_I& __I)
 				return;
 			}
 			OnControllerHeartbeat();
+		}
+		break;
+
+	case PACKET_TYPEFLAG_CONTROLLER_FILEIOBIN:
+		{
+			if (!IsController(__I.in))
+			{
+				return;
+			}
+			OnControllerFileIOTrans(__I.Buffer,__I.Size);
+		}
+		break;
+	case PACKET_TYPEFLAG_CONTROLLER_FILEIOINF:
+		{
+			if (!IsController(__I.in))
+			{
+				return;
+			}
+			OnControllerFileIOTrans(__I.Buffer,__I.Size);
+		}
+		break;
+	default:
+		{
+			//Client fileIO
+			if (!IsController(__I.in))
+			{
+				for (unsigned int i=0;i<m_vClient.size();i++)
+				{
+					if (__I.in.sin_addr.S_un.S_addr==m_vClient[i].In.sin_addr.S_un.S_addr)
+					{
+						if(__I.in.sin_port==m_vClient[i].In.sin_port)
+						{
+							m_vClient[i].Activate();
+						}
+					}
+				}
+			OnClientFileIOTrans(__I.Buffer,__I.Size);
+			}
+			else
+			{
+				m_ControllerLive.Activate();
+			}
 		}
 		break;
 	}
@@ -296,9 +338,84 @@ BOOL RemoteServerFrameWork::IsController( SOCKADDR_IN in )
 	return FALSE;
 }
 
+void RemoteServerFrameWork::OnControllerFileIOTrans( void *Buffer,int size )
+{
+	struct stMagicNumber 
+	{
+		unsigned int MagicNumber;
+	};
+
+	Packet_Server_ControllerTranslate<stMagicNumber> *Magic;
+	Magic=(Packet_Server_ControllerTranslate<stMagicNumber> *)Buffer;
+	switch (Magic->Packet.MagicNumber)
+	{
+		// #define PARALLELFILE_MAGIC_CONNECT					0x0ecdae01
+		// #define PARALLELFILE_MAGIC_CONNECTREPLY				0x0ecdae02
+		// #define PARALLELFILE_MAGIC_BINREQUEST				0x0ecdae03
+		// #define PARALLELFILE_MAGIC_BIN						0x0ecdae04
+		// #define PARALLELFILE_MAGIC_BINACK					0x0ecdae05
+		// #define PARALLELFILE_MAGIC_DONE						0x0ecdae06
+	case PARALLELFILE_MAGIC_CONNECT:
+		{
+			Packet_Server_ControllerTranslate<PARALLELFILE_PACKET_CCMD_CONNECT> Trans;
+			Trans=*((Packet_Server_ControllerTranslate<PARALLELFILE_PACKET_CCMD_CONNECT> *)Buffer);
+			EmitToClient(Trans.ClientIn,&Trans.Packet,sizeof PARALLELFILE_PACKET_CCMD_CONNECT);
+			printf("<TRANS>控制端连接请求转发\n%s  SIZE:%d bytes\n",Trans.Packet.FileName,Trans.Packet.size);
+		}
+		break;
+	case PARALLELFILE_MAGIC_BINREQUEST:
+		{
+			Packet_Server_ControllerTranslate<PARALLELFILE_PACKET_BIN_REQUEST> Trans;
+			Trans=*((Packet_Server_ControllerTranslate<PARALLELFILE_PACKET_BIN_REQUEST> *)Buffer);
+			EmitToClient(Trans.ClientIn,&Trans.Packet,sizeof PARALLELFILE_PACKET_BIN_REQUEST);
+		}
+		break;
+		
+	case PARALLELFILE_MAGIC_BIN:
+		{
+			Packet_Server_ControllerTranslate<PARALLELFILE_PACKET_BIN> Trans;
+			Trans=*((Packet_Server_ControllerTranslate<PARALLELFILE_PACKET_BIN> *)Buffer);
+			EmitToClient(Trans.ClientIn,&Trans.Packet,sizeof PARALLELFILE_PACKET_BIN);
+		}
+		break;
+	case PARALLELFILE_MAGIC_DONE:
+		{
+			Packet_Server_ControllerTranslate<PARALLELFILE_PACKET_DONE> Trans;
+			Trans=*((Packet_Server_ControllerTranslate<PARALLELFILE_PACKET_DONE> *)Buffer);
+			EmitToClient(Trans.ClientIn,&Trans.Packet,sizeof PARALLELFILE_PACKET_DONE);
+		}
+		break;
+	}
+}
+
+void RemoteServerFrameWork::OnClientFileIOTrans( void *buffer,int size )
+{
+	struct stMagicNumber 
+	{
+		unsigned int MagicNumber;
+	};
+	stMagicNumber *pMagicNumber=(stMagicNumber *)buffer;
+	switch (pMagicNumber->MagicNumber)
+	{
+		// #define PARALLELFILE_MAGIC_CONNECT					0x0ecdae01
+		// #define PARALLELFILE_MAGIC_CONNECTREPLY				0x0ecdae02
+		// #define PARALLELFILE_MAGIC_BINREQUEST				0x0ecdae03
+		// #define PARALLELFILE_MAGIC_BIN						0x0ecdae04
+		// #define PARALLELFILE_MAGIC_BINACK					0x0ecdae05
+		// #define PARALLELFILE_MAGIC_DONE						0x0ecdae06
+	case PARALLELFILE_MAGIC_CONNECTREPLY:		
+	case PARALLELFILE_MAGIC_BINREQUEST:
+	case PARALLELFILE_MAGIC_BIN:
+	case PARALLELFILE_MAGIC_BINACK:
+		{
+			EmitToController(buffer,size);
+		}
+		break;
+	}
+}
 void RemoteControllerLive::Activate()
 {
-	m_AliveTime=5000;
+	m_AliveTime=REMOTESHELL_LIVE_TIME;
 }
 
 void RemoteControllerLive::run()

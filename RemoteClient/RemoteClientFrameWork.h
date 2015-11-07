@@ -17,7 +17,7 @@ private:
 };
 
 
-class RemoteClientFileIO:public ParalleFileTransfer
+class RemoteClientFileIO:public ParalleFileTransfer_Slave
 {
 public:
 	void send(void *Buffer,size_t size) override;
@@ -45,7 +45,8 @@ private:
 	CmdProcess            m_CMD;
 	SOCKADDR_IN			  m_to;
 	ThreadMessageBox      m_Msg;
-	RemoteClientFileIO    m_FileIO;
+
+	RemoteClientFileIO	  m_FileIOSlave;
 };
 
 extern RemoteClientFrameWork G_RemoteFrameWork;

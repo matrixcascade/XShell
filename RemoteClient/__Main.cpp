@@ -1,6 +1,6 @@
 #include "RemoteClientFrameWork.h"
 
-#include "../XInfester/inc/XInfester.h"
+
 
 #define  REMOTESHELL_PROCESS_GUID ("14B590DD-E9D3-4300-BF5D-4228B825B145")
 

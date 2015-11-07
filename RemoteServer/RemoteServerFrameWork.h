@@ -3,6 +3,7 @@
 #include "../Common/inc/RemoteShellNetPacket.h"
 #include "RemoteServerNet.h"
 #include "../Common/inc/RemoteShellConfig.h"
+#include "../ParallelFileTransfer/ParalleFileTransfer.h"
 
 #include <vector>
 
@@ -51,8 +52,8 @@ private:
 	void OnControllerLogin(Cube_SocketUDP_I &);
 	void OnControllerList();
 	void OnControllerHeartbeat();
-	
-
+	void OnControllerFileIOTrans(void *buffer,int size);
+	void OnClientFileIOTrans(void *buffer,int size);
 
 	//Identity controller user
 	SOCKADDR_IN   m_SockAddrController;

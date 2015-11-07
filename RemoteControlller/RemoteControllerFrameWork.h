@@ -26,7 +26,7 @@ private:
 	int m_Time;
 };
 
-class RemoteControllerFileIO:public ParalleFileTransfer
+class RemoteControllerFileIO:public ParalleFileTransfer_Master
 {
 public:
 	void send(void *Buffer,size_t size) override;
@@ -59,6 +59,7 @@ public:
 
 	RemoteControllerNet *GetNetInterface(){return &m_Net;}
 	SOCKADDR_IN			 GetServerAddrin(){return m_ServerAddrin;}
+	SOCKADDR_IN			 GetClientAddrin(){return m_vClients[m_CurrentOperateClient];}
 	unsigned int              m_ExecFsm;
 	unsigned int			  m_FSM;
 private:
@@ -74,7 +75,8 @@ private:
 	RemoteControllerNet		  m_Net;
 	int						  m_RecvListCount;
 	int						  m_CurList;
-	RemoteControllerFileIO    m_FileIO;
+
+	RemoteControllerFileIO	  m_FileIOMaster;
  
 };
 

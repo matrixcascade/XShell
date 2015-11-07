@@ -86,6 +86,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Common\src\CmdProcess.cpp" />
+    <ClCompile Include="..\Common\src\ScreenShot.cpp" />
     <ClCompile Include="RemoteClientFrameWork.cpp" />
     <ClCompile Include="RemoteClientNet.cpp" />
     <ClCompile Include="__Main.cpp" />

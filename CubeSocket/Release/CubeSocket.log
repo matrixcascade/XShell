@@ -1,12 +1,9 @@
-﻿生成启动时间为 2015/10/10 20:48:03。
-     1>项目“G:\XShell\CubeSocket\CubeSocket.vcxproj”在节点 2 上(build 个目标)。
+﻿生成启动时间为 2015/10/24 19:14:17。
+     1>项目“G:\XShell\CubeSocket\CubeSocket.vcxproj”在节点 4 上(build 个目标)。
      1>InitializeBuildStatus:
          正在创建“Release\CubeSocket.unsuccessfulbuild”，因为已指定“AlwaysCreate”。
        ClCompile:
-         F:\Program Files (x86)\VS\VC\bin\CL.exe /c /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D _MBCS /Gm- /EHsc /MT /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt src\Cube_SocketTCP.cpp src\Cube_SocketUDP.cpp src\Cube_Thread.cpp
-         Cube_SocketTCP.cpp
-         Cube_SocketUDP.cpp
-         Cube_Thread.cpp
+         所有输出均为最新。
        Lib:
          F:\Program Files (x86)\VS\VC\bin\Lib.exe /OUT:"G:\XShell\Release\CubeSocket.lib" /NOLOGO /LTCG Release\Cube_SocketTCP.obj
          Release\Cube_SocketUDP.obj
@@ -19,4 +16,4 @@
 
 生成成功。
 
-已用时间 00:00:00.64
+已用时间 00:00:00.44

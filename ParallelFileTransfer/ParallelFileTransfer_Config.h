@@ -5,7 +5,7 @@
 // 2015-10-12
 //////////////////////////////////////////////////////////////////////////
 
-#define  PARALLELFILETRANSFER_BLOCK_SIZE       512
+#define  PARALLELFILETRANSFER_BLOCK_SIZE       1024
 #define  PARALLELFILETRANSFER_BLOCK_COUNT      128
 
 

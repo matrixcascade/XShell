@@ -90,9 +90,26 @@ void RemoteClientFrameWork::OnNetRecv( Cube_SocketUDP_I& __I)
 		m_Msg.Show(((Packet_Client_Message *)__I.Buffer)->message);
 		ResponeSucceeded();
 		break;
-
 	default:
-		m_FileIO.recv(__I.Buffer,__I.Size);
+		{
+			//File IO Maigic Number
+			struct stMagicNumber
+			{
+				unsigned int MagicNumber;
+			};
+
+			stMagicNumber *Mag=(stMagicNumber *)__I.Buffer;
+
+			switch(Mag->MagicNumber)
+			{
+			case PARALLELFILE_MAGIC_CONNECT:
+			case PARALLELFILE_MAGIC_BINREQUEST:
+			case PARALLELFILE_MAGIC_BIN:
+			case PARALLELFILE_MAGIC_DONE:
+					m_FileIOSlave.recv(__I.Buffer,__I.Size);
+			}
+			
+		}
 		break;
 	}
 

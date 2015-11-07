@@ -1,9 +1,30 @@
-﻿生成启动时间为 2015/10/13 19:53:51。
+﻿生成启动时间为 2015/10/19 0:13:54。
      1>项目“G:\XShell\ParallelFileTransfer\ParallelFileTransfer.vcxproj”在节点 2 上(build 个目标)。
      1>InitializeBuildStatus:
-         正在对“Debug\ParallelFileTransfer.unsuccessfulbuild”执行 Touch 任务。
+         正在创建“Debug\ParallelFileTransfer.unsuccessfulbuild”，因为已指定“AlwaysCreate”。
        ClCompile:
-         所有输出均为最新。
+         F:\Program Files (x86)\VS\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D _MBCS /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc100.pdb" /Gd /TP /analyze- /errorReport:prompt ParalleFileTransfer.cpp
+         ParalleFileTransfer.cpp
+     1>g:\xshell\parallelfiletransfer\parallefiletransfer.cpp(7): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 f:\program files (x86)\vs\vc\include\stdio.h(234) : 参见“fopen”的声明
+     1>g:\xshell\parallelfiletransfer\parallefiletransfer.cpp(104): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 f:\program files (x86)\vs\vc\include\stdio.h(234) : 参见“fopen”的声明
+     1>g:\xshell\parallelfiletransfer\parallefiletransfer.cpp(130): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 f:\program files (x86)\vs\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>g:\xshell\parallelfiletransfer\parallefiletransfer.cpp(244): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 f:\program files (x86)\vs\vc\include\stdio.h(234) : 参见“fopen”的声明
+     1>g:\xshell\parallelfiletransfer\parallefiletransfer.cpp(261): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 f:\program files (x86)\vs\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>g:\xshell\parallelfiletransfer\parallefiletransfer.cpp(338): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 f:\program files (x86)\vs\vc\include\stdio.h(234) : 参见“fopen”的声明
+     1>g:\xshell\parallelfiletransfer\parallefiletransfer.cpp(644): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 f:\program files (x86)\vs\vc\include\stdio.h(234) : 参见“fopen”的声明
+     1>g:\xshell\parallelfiletransfer\parallefiletransfer.cpp(657): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 f:\program files (x86)\vs\vc\include\string.h(105) : 参见“strcpy”的声明
+     1>g:\xshell\parallelfiletransfer\parallefiletransfer.cpp(688): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 f:\program files (x86)\vs\vc\include\stdio.h(234) : 参见“fopen”的声明
+     1>g:\xshell\parallelfiletransfer\parallefiletransfer.cpp(788): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+                 f:\program files (x86)\vs\vc\include\stdio.h(234) : 参见“fopen”的声明
        Lib:
          F:\Program Files (x86)\VS\VC\bin\Lib.exe /OUT:"G:\XShell\Debug\ParallelFileTransfer.lib" /NOLOGO Debug\ParalleFileTransfer.obj
          ParallelFileTransfer.vcxproj -> G:\XShell\Debug\ParallelFileTransfer.lib
@@ -14,4 +35,4 @@
 
 生成成功。
 
-已用时间 00:00:00.03
+已用时间 00:00:00.34

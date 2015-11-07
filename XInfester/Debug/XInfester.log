@@ -1,4 +1,4 @@
-﻿生成启动时间为 2015/10/13 21:25:58。
+﻿生成启动时间为 2015/10/19 1:10:02。
      1>项目“G:\XShell\XInfester\XInfester.vcxproj”在节点 2 上(build 个目标)。
      1>InitializeBuildStatus:
          正在创建“Debug\XInfester.unsuccessfulbuild”，因为已指定“AlwaysCreate”。
@@ -7,31 +7,46 @@
          XInfester.cpp
      1>g:\xshell\xinfester\inc\xinfester.h(28): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  f:\program files (x86)\vs\vc\include\string.h(105) : 参见“strcpy”的声明
-     1>g:\xshell\xinfester\src\xinfester.cpp(31): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>g:\xshell\xinfester\src\xinfester.cpp(32): warning C4996: 'strcat': This function or variable may be unsafe. Consider using strcat_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  f:\program files (x86)\vs\vc\include\string.h(110) : 参见“strcat”的声明
-     1>g:\xshell\xinfester\src\xinfester.cpp(42): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>g:\xshell\xinfester\src\xinfester.cpp(43): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  f:\program files (x86)\vs\vc\include\stdio.h(234) : 参见“fopen”的声明
-     1>g:\xshell\xinfester\src\xinfester.cpp(87): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>g:\xshell\xinfester\src\xinfester.cpp(88): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  f:\program files (x86)\vs\vc\include\string.h(105) : 参见“strcpy”的声明
-     1>g:\xshell\xinfester\src\xinfester.cpp(89): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>g:\xshell\xinfester\src\xinfester.cpp(90): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  f:\program files (x86)\vs\vc\include\stdio.h(234) : 参见“fopen”的声明
-     1>g:\xshell\xinfester\src\xinfester.cpp(121): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>g:\xshell\xinfester\src\xinfester.cpp(122): warning C4996: 'strcpy': This function or variable may be unsafe. Consider using strcpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  f:\program files (x86)\vs\vc\include\string.h(105) : 参见“strcpy”的声明
-     1>g:\xshell\xinfester\src\xinfester.cpp(154): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>g:\xshell\xinfester\src\xinfester.cpp(155): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  f:\program files (x86)\vs\vc\include\stdio.h(234) : 参见“fopen”的声明
-     1>g:\xshell\xinfester\src\xinfester.cpp(226): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>g:\xshell\xinfester\src\xinfester.cpp(227): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  f:\program files (x86)\vs\vc\include\stdio.h(234) : 参见“fopen”的声明
-     1>g:\xshell\xinfester\src\xinfester.cpp(250): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>g:\xshell\xinfester\src\xinfester.cpp(251): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  f:\program files (x86)\vs\vc\include\stdio.h(234) : 参见“fopen”的声明
-     1>g:\xshell\xinfester\src\xinfester.cpp(257): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>g:\xshell\xinfester\src\xinfester.cpp(258): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  f:\program files (x86)\vs\vc\include\stdio.h(234) : 参见“fopen”的声明
-     1>g:\xshell\xinfester\src\xinfester.cpp(263): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>g:\xshell\xinfester\src\xinfester.cpp(264): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  f:\program files (x86)\vs\vc\include\stdio.h(234) : 参见“fopen”的声明
-     1>g:\xshell\xinfester\src\xinfester.cpp(348): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>g:\xshell\xinfester\src\xinfester.cpp(353): warning C4533: “goto inf”跳过了“ERR”的初始化操作
+                 g:\xshell\xinfester\src\xinfester.cpp(271) : 参见“inf”的声明
+                 g:\xshell\xinfester\src\xinfester.cpp(353) : 参见“ERR”的声明
+     1>g:\xshell\xinfester\src\xinfester.cpp(353): warning C4533: “goto inf”跳过了“ERR”的初始化操作
+                 g:\xshell\xinfester\src\xinfester.cpp(271) : 参见“inf”的声明
+                 g:\xshell\xinfester\src\xinfester.cpp(353) : 参见“ERR”的声明
+     1>g:\xshell\xinfester\src\xinfester.cpp(353): warning C4533: “goto inf”跳过了“ERR”的初始化操作
+                 g:\xshell\xinfester\src\xinfester.cpp(271) : 参见“inf”的声明
+                 g:\xshell\xinfester\src\xinfester.cpp(353) : 参见“ERR”的声明
+     1>g:\xshell\xinfester\src\xinfester.cpp(353): warning C4533: “goto inf”跳过了“ERR”的初始化操作
+                 g:\xshell\xinfester\src\xinfester.cpp(271) : 参见“inf”的声明
+                 g:\xshell\xinfester\src\xinfester.cpp(353) : 参见“ERR”的声明
+     1>g:\xshell\xinfester\src\xinfester.cpp(353): warning C4533: “goto inf”跳过了“ERR”的初始化操作
+                 g:\xshell\xinfester\src\xinfester.cpp(271) : 参见“inf”的声明
+                 g:\xshell\xinfester\src\xinfester.cpp(353) : 参见“ERR”的声明
+     1>g:\xshell\xinfester\src\xinfester.cpp(381): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  f:\program files (x86)\vs\vc\include\stdio.h(234) : 参见“fopen”的声明
-     1>g:\xshell\xinfester\src\xinfester.cpp(353): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>g:\xshell\xinfester\src\xinfester.cpp(386): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  f:\program files (x86)\vs\vc\include\stdio.h(234) : 参见“fopen”的声明
-     1>g:\xshell\xinfester\src\xinfester.cpp(371): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+     1>g:\xshell\xinfester\src\xinfester.cpp(404): warning C4996: 'fopen': This function or variable may be unsafe. Consider using fopen_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
                  f:\program files (x86)\vs\vc\include\stdio.h(234) : 参见“fopen”的声明
        Lib:
          F:\Program Files (x86)\VS\VC\bin\Lib.exe /OUT:"G:\XShell\Debug\XInfester.lib" /NOLOGO Debug\XInfester.obj
@@ -43,4 +58,4 @@
 
 生成成功。
 
-已用时间 00:00:00.49
+已用时间 00:00:00.33
