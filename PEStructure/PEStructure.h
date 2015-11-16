@@ -8,7 +8,7 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include <stdio.h>
-
+#include <vector>
 
 
 typedef unsigned short WORD;
@@ -139,16 +139,28 @@ struct IMAGE_SECTION_HEADER {
 	DWORD   Characteristics;
 };
 
+using namespace std;
 class PEStructure
 {
 public:
-	PEStructure(){};
+	PEStructure()
+	{
+	};
 	~PEStructure(){};
 
-	bool Load_PE_File(const char *fileName);
+	bool		Load_PE_File(const char *fileName);
+	bool		IsDLL(){return m_IsDLL;}
+	bool		IsExec(){return m_IsExec;}
+	DWORD		GetEnteyPoint(){return m_EP;}
+	void		free();
 private:
 	IMAGE_DOS_HEADER				 m_ImageDosHeader;
 	IMAGE_NT_HEADERS				 m_ImageNtHeaders;
+	vector<IMAGE_SECTION_HEADER>	 m_ImageSectionHeaders;
+	
+	bool							 m_IsDLL;
+	bool							 m_IsExec;
+	DWORD							 m_EP;
 };
 
 
