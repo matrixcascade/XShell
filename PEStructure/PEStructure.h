@@ -10,7 +10,9 @@
 #include <stdio.h>
 #include <vector>
 
-
+#define  IMPORT_TABLE_NAME_MAXLEN		256
+#define  IMPORT_FUNCTION_NAME_MAXLEN	256
+using namespace std;
 typedef unsigned short WORD;
 typedef unsigned int   DWORD;
 typedef unsigned char  BYTE;
@@ -139,28 +141,125 @@ struct IMAGE_SECTION_HEADER {
 	DWORD   Characteristics;
 };
 
-using namespace std;
+struct IMAGE_IMPORT_DESCRIPTOR {
+	union {
+		DWORD   Characteristics;            // 0 for terminating null import descriptor
+		DWORD   OriginalFirstThunk;         // RVA to original unbound IAT (PIMAGE_THUNK_DATA)
+	} DUMMYUNIONNAME;
+	DWORD   TimeDateStamp;                  // 0 if not bound,
+	// -1 if bound, and real date\time stamp
+	//     in IMAGE_DIRECTORY_ENTRY_BOUND_IMPORT (new BIND)
+	// O.W. date/time stamp of DLL bound to (Old BIND)
+
+	DWORD   ForwarderChain;                 // -1 if no forwarders
+	DWORD   Name;
+	DWORD   FirstThunk;                     // RVA to IAT (if bound this IAT has actual addresses)
+};
+
+//Import functions
+struct IMAGE_IMPORT_BY_NAME {
+	WORD    Hint; //Function index 
+	BYTE    Name[1];//Function name
+};
+
+struct IMAGE_IMPORT_FUNCTIONSMAP
+{
+	DWORD				 addr;
+
+	IMAGE_IMPORT_FUNCTIONSMAP()
+	{
+		addr=0;
+	}
+};
+
+struct IMAGE_IMPORT_DESCRIPTOR_MAP_FUNCTIONS
+{
+	vector<IMAGE_IMPORT_FUNCTIONSMAP> m_ImportFunctions;
+};
+
+struct IMAGE_THUNK_DATA{
+	union {
+		DWORD ForwarderString;      // PBYTE 
+		DWORD Function;             // PDWORD
+		DWORD Ordinal;
+		DWORD AddressOfData;        // PIMAGE_IMPORT_BY_NAME
+	} u1;
+};
+
 class PEStructure
 {
 public:
 	PEStructure()
 	{
+		m_pf=NULL;
+		m_Image=NULL;
 	};
-	~PEStructure(){};
+	~PEStructure()
+	{
+		free();
+	};
+
+	
 
 	bool		Load_PE_File(const char *fileName);
+	//bool		AddImportTable(const char *ImportTableName);
 	bool		IsDLL(){return m_IsDLL;}
 	bool		IsExec(){return m_IsExec;}
-	DWORD		GetEnteyPoint(){return m_EP;}
+	bool		IsImportFunctionRVA(int Tableindex,int FuncIndex);
+	bool		Dump(const char *pDumpFileName);
+	bool		UpdateNtHeader(IMAGE_NT_HEADERS ntHeader);
+	bool		AddSection(DWORD Characteristics,char Name[8],DWORD Size,void *CopyBuffer=NULL);
+
+
 	void		free();
-private:
-	IMAGE_DOS_HEADER				 m_ImageDosHeader;
-	IMAGE_NT_HEADERS				 m_ImageNtHeaders;
-	vector<IMAGE_SECTION_HEADER>	 m_ImageSectionHeaders;
+
+	DWORD		GetEntryPoint(){return m_EP;}
+	DWORD		GetCheckSum();
+	DWORD       GetImportFunctionHint(int Tableindex,int FuncIndex);
+	DWORD       GetImportFunctionRVA(int Tableindex,int FuncIndex);
+
+	int			GetImportTableCount(){return m_ImageImportDescriptors.size();}
+	int			GetImportFunctionsCount(int TableIndex);
+
+	const char *GetImportTableName(int Tableindex);
+	const char *GetImportFunctionName(int Tableindex,int FuncIndex);
+
 	
-	bool							 m_IsDLL;
-	bool							 m_IsExec;
-	DWORD							 m_EP;
+	IMAGE_IMPORT_BY_NAME GetImportFunction(int TableIndex,int FuncIndex);
+
+	size_t		GetFileSize();
+	size_t      RVA_To_FOA(size_t RVA);
+private:
+	//////////////////////////////////////////////////////////////////////////
+	//Image operate functions
+	bool		ImageSolve(size_t ImageSize=0);
+	bool		ImageRead(void *Dest,size_t Size);
+	bool		ImageSeek(size_t Oft);
+	size_t		ImageTell();
+	void *		ImagePointer(size_t Offset);
+
+	PEStructure(PEStructure&){};
+
+	static int												st_Reference;
+
+	IMAGE_DOS_HEADER										m_ImageDosHeader;
+	IMAGE_NT_HEADERS										m_ImageNtHeaders;
+	vector<IMAGE_SECTION_HEADER>							m_ImageSectionHeaders;
+	vector<IMAGE_IMPORT_DESCRIPTOR>							m_ImageImportDescriptors;
+	vector<IMAGE_IMPORT_DESCRIPTOR_MAP_FUNCTIONS>			m_ImageImportDescrtptorsMapFunctions;
+		 
+	size_t													m_FileSize;
+	size_t													m_ImageSize;
+	size_t													m_ImageSeek;
+
+	bool													m_IsDLL;
+	bool													m_IsExec;
+	DWORD													m_EP;
+
+	FILE													*m_pf;
+
+	//Image buffer
+	unsigned char											*m_Image;
 };
 
 
