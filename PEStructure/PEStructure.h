@@ -203,8 +203,8 @@ public:
 
 	bool		Load_PE_File(const char *fileName);
 	//bool		AddImportTable(const char *ImportTableName);
-	bool		IsDLL(){return m_IsDLL;}
-	bool		IsExec(){return m_IsExec;}
+	bool		IsDLL();
+	bool		IsExec();
 	bool		IsImportFunctionRVA(int Tableindex,int FuncIndex);
 	bool		Dump(const char *pDumpFileName);
 	bool		UpdateNtHeader(IMAGE_NT_HEADERS ntHeader);
@@ -213,7 +213,7 @@ public:
 
 	void		free();
 
-	DWORD		GetEntryPoint(){return m_EP;}
+	DWORD		&GetEntryPoint();
 	DWORD		GetCheckSum();
 	DWORD       GetImportFunctionHint(int Tableindex,int FuncIndex);
 	DWORD       GetImportFunctionRVA(int Tableindex,int FuncIndex);
@@ -226,6 +226,9 @@ public:
 
 	
 	IMAGE_IMPORT_BY_NAME GetImportFunction(int TableIndex,int FuncIndex);
+
+	IMAGE_DOS_HEADER	*GetImageDosHeaderPointer();
+	IMAGE_NT_HEADERS	*GetImageNtHeaderPointer();
 
 	size_t		GetFileSize();
 	size_t      RVA_To_FOA(size_t RVA);
@@ -242,8 +245,6 @@ private:
 
 	static int												st_Reference;
 
-	IMAGE_DOS_HEADER										m_ImageDosHeader;
-	IMAGE_NT_HEADERS										m_ImageNtHeaders;
 	vector<IMAGE_SECTION_HEADER>							m_ImageSectionHeaders;
 	vector<IMAGE_IMPORT_DESCRIPTOR>							m_ImageImportDescriptors;
 	vector<IMAGE_IMPORT_DESCRIPTOR_MAP_FUNCTIONS>			m_ImageImportDescrtptorsMapFunctions;
@@ -252,9 +253,7 @@ private:
 	size_t													m_ImageSize;
 	size_t													m_ImageSeek;
 
-	bool													m_IsDLL;
-	bool													m_IsExec;
-	DWORD													m_EP;
+
 
 	FILE													*m_pf;
 

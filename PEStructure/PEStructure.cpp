@@ -34,7 +34,8 @@ bool PEStructure::Load_PE_File( const char *fileName )
 		m_ImageSize=m_FileSize+1;
 	}
 	
-	
+	memset(m_Image,0,m_ImageSize);
+
 	m_ImageSeek=0;
 	if (!m_Image)
 	{
@@ -67,8 +68,6 @@ void PEStructure::free()
 			delete [] m_Image;
 			m_Image=NULL;
 		}
-
-	
 }
 
 size_t PEStructure::RVA_To_FOA(size_t RVA)
@@ -112,7 +111,7 @@ DWORD PEStructure::GetCheckSum()
 
 		DWORD CheckSum=0;
 	
-		IMAGE_NT_HEADERS *pNT=(IMAGE_NT_HEADERS *)(m_Image+m_ImageDosHeader.e_lfanew);
+		IMAGE_NT_HEADERS *pNT=(IMAGE_NT_HEADERS *)(m_Image+GetImageDosHeaderPointer()->e_lfanew);
 
 		pNT->OptionalHeader.CheckSum=0;
 
@@ -172,6 +171,7 @@ const char * PEStructure::GetImportTableName(int Tableindex)
 				return NULL;
 			}
 		}
+		return NULL;
 
 }
 
@@ -347,43 +347,37 @@ bool PEStructure::ImageSolve(size_t ImageSize)
 	m_ImageSeek=0;
 	m_ImageSize=ImageSize;
 
+	IMAGE_DOS_HEADER TempDosHeader;
 	//Read DOS header
-	if(!ImageRead(&m_ImageDosHeader,sizeof(m_ImageDosHeader)))
+	if(!ImageRead(&TempDosHeader,sizeof(TempDosHeader)))
 		goto _ERROR;
 
-	if (m_ImageDosHeader.e_magic!=0x5a4d)
+	if (TempDosHeader.e_magic!=0x5a4d)
 	{
 		//Signature error
 		goto _ERROR;
 	}
 
+
 	//Seek to PE Header
-	if(!ImageSeek(m_ImageDosHeader.e_lfanew))
+	if(!ImageSeek(GetImageDosHeaderPointer()->e_lfanew))
 		goto _ERROR;
 
 	//Read NT Headers
-	if (!ImageRead(&m_ImageNtHeaders,sizeof(m_ImageNtHeaders)))
+	IMAGE_NT_HEADERS TempNtHeader;
+
+	if (!ImageRead(&TempNtHeader,sizeof(TempNtHeader)))
 		goto _ERROR;
 
-	if (m_ImageNtHeaders.Signature!=0x00004550)
+	if (TempNtHeader.Signature!=0x00004550)
 	{
 		//Signature error
 		goto _ERROR;
 	}
 
-	//Is Dynamic Link Library 
-	m_IsDLL=(m_ImageNtHeaders.FileHeader.Characteristics&0x2002)==0x2002;
-
-	if(!m_IsDLL)
-		m_IsExec=(m_ImageNtHeaders.FileHeader.Characteristics&0x0002)!=0;
-	else
-		m_IsExec=false;
-
-	//Entry Point
-	m_EP=m_ImageNtHeaders.OptionalHeader.AddressOfEntryPoint;
 
 	//Load sections from file
-	for (int i=0;i<m_ImageNtHeaders.FileHeader.NumberOfSections;i++)
+	for (int i=0;i<TempNtHeader.FileHeader.NumberOfSections;i++)
 	{
 		IMAGE_SECTION_HEADER ImageSectionHeader;
 		if (!ImageRead(&ImageSectionHeader,sizeof(IMAGE_SECTION_HEADER)))
@@ -394,7 +388,7 @@ bool PEStructure::ImageSolve(size_t ImageSize)
 	}
 
 	//Get import tables
-	size_t TableFOA=RVA_To_FOA(m_ImageNtHeaders.OptionalHeader.DataDirectory[1].VirtualAddress);
+	size_t TableFOA=RVA_To_FOA(TempNtHeader.OptionalHeader.DataDirectory[1].VirtualAddress);
 	if (!TableFOA)
 	{
 		goto _ERROR;
@@ -459,14 +453,29 @@ _ERROR:
 bool PEStructure::Dump(const char *pDumpFileName)
 {
 	FILE *pf=NULL;
+	size_t	WriteSize=0,SizeSum=m_ImageSize;
+	unsigned char *pBufferOft=m_Image;
 	if ((pf=fopen(pDumpFileName,"wb"))!=NULL)
 	{
-		if (fwrite(m_Image,1,m_ImageSize,pf)!=m_ImageSize)
+		while (SizeSum)
 		{
-			fclose(pf);
-			return false;
+			if(SizeSum>256)
+			{
+				WriteSize=fwrite(pBufferOft,1,256,pf);
+				SizeSum-=WriteSize;
+			}
+			else
+			{
+				WriteSize=fwrite(pBufferOft,1,SizeSum,pf);
+				SizeSum-=WriteSize;
+			}
+			if (!WriteSize)
+			{
+				fclose(pf);
+				return false;
+			}
+			pBufferOft+=WriteSize;
 		}
-		fclose(pf);
 		return true;
 	}
 	return false;
@@ -478,12 +487,12 @@ bool PEStructure::AddSection(DWORD Characteristics,char Name[8],DWORD Size,void 
 	newSectionHeader.Characteristics=Characteristics;
 	memcpy(newSectionHeader.Name,Name,8);
 
-	size_t FileAlign=m_ImageNtHeaders.OptionalHeader.FileAlignment;
-	size_t SectionAlign=m_ImageNtHeaders.OptionalHeader.SectionAlignment;
+	size_t FileAlign=GetImageNtHeaderPointer()->OptionalHeader.FileAlignment;
+	size_t SectionAlign=GetImageNtHeaderPointer()->OptionalHeader.SectionAlignment;
 
 	//Checkout the PE space for insert section header
-	if (FileAlign-(m_ImageDosHeader.e_lfanew
-		+sizeof(IMAGE_NT_HEADERS)+sizeof(IMAGE_SECTION_HEADER)*m_ImageNtHeaders.FileHeader.NumberOfSections)
+	if (FileAlign-(GetImageDosHeaderPointer()->e_lfanew
+		+sizeof(IMAGE_NT_HEADERS)+sizeof(IMAGE_SECTION_HEADER)*GetImageNtHeaderPointer()->FileHeader.NumberOfSections)
 		%FileAlign<=sizeof(IMAGE_SECTION_HEADER))
 	{
 		return false;
@@ -512,7 +521,9 @@ bool PEStructure::AddSection(DWORD Characteristics,char Name[8],DWORD Size,void 
 	{
 		memcpy(NewImage+m_ImageSize,CopyBuffer,Size);
 	}
-
+	//Replace old image
+	delete [] m_Image;
+	m_Image=NewImage;
 	
 	
 	//Setup header
@@ -523,11 +534,11 @@ bool PEStructure::AddSection(DWORD Characteristics,char Name[8],DWORD Size,void 
 
 	//Virtual address=Last section+size of last section
 	int index=m_ImageSectionHeaders.size()-1;
-	Size=m_ImageSectionHeaders[index].Misc.VirtualSize;
-	if(Size%SectionAlign)
-	newSectionHeader.VirtualAddress=m_ImageSectionHeaders[index].VirtualAddress+SectionAlign*(Size/SectionAlign+1);
+	int ResSectionSize=m_ImageSectionHeaders[index].Misc.VirtualSize;
+	if(ResSectionSize%SectionAlign)
+	newSectionHeader.VirtualAddress=m_ImageSectionHeaders[index].VirtualAddress+SectionAlign*(ResSectionSize/SectionAlign+1);
 	else
-	newSectionHeader.VirtualAddress=m_ImageSectionHeaders[index].VirtualAddress+Size;
+	newSectionHeader.VirtualAddress=m_ImageSectionHeaders[index].VirtualAddress+ResSectionSize;
 
 	newSectionHeader.SizeOfRawData=RawAllocSize;
 	
@@ -540,20 +551,28 @@ bool PEStructure::AddSection(DWORD Characteristics,char Name[8],DWORD Size,void 
 	newSectionHeader.NumberOfLinenumbers=0;
 	
 	//completed
-	IMAGE_SECTION_HEADER *pNewSectionHeader=(IMAGE_SECTION_HEADER *)ImagePointer(m_ImageDosHeader.e_lfanew
-		+sizeof(IMAGE_NT_HEADERS)+sizeof(IMAGE_SECTION_HEADER)*m_ImageNtHeaders.FileHeader.NumberOfSections);
+	IMAGE_SECTION_HEADER *pNewSectionHeader=(IMAGE_SECTION_HEADER *)ImagePointer(GetImageDosHeaderPointer()->e_lfanew
+		+sizeof(IMAGE_NT_HEADERS)+sizeof(IMAGE_SECTION_HEADER)*GetImageNtHeaderPointer()->FileHeader.NumberOfSections);
 
 	*pNewSectionHeader=newSectionHeader;
 
 	//Modify header
-	m_ImageNtHeaders.FileHeader.NumberOfSections++;
-	m_ImageNtHeaders.OptionalHeader.SizeOfImage=m_ImageSize+RawAllocSize;
-	//Fix check code
-	m_ImageNtHeaders.OptionalHeader.CheckSum=GetCheckSum();
-	
-	if(!UpdateNtHeader(m_ImageNtHeaders))
+	IMAGE_NT_HEADERS *pModifyNtHeader=GetImageNtHeaderPointer();
+	if (!pModifyNtHeader)
+	{
 		goto _ERROR;
+	}
+	pModifyNtHeader->FileHeader.NumberOfSections++;
+	//Modify Image size
+	if(Size%SectionAlign)
+	pModifyNtHeader->OptionalHeader.SizeOfImage=newSectionHeader.VirtualAddress+SectionAlign*(Size/SectionAlign+1);
+	else
+	pModifyNtHeader->OptionalHeader.SizeOfImage=newSectionHeader.VirtualAddress+Size;
+	
+	//Fix check code
+	pModifyNtHeader->OptionalHeader.CheckSum=GetCheckSum();
 
+	//Resolve
 	ImageSolve(m_ImageSize+RawAllocSize);
 	return true;
 
@@ -566,9 +585,45 @@ bool PEStructure::UpdateNtHeader( IMAGE_NT_HEADERS ntHeader )
 {
 	if (m_Image)
 	{
-		IMAGE_NT_HEADERS * pNtHeader=(IMAGE_NT_HEADERS *) (m_Image+m_ImageDosHeader.e_lfanew);
+		IMAGE_NT_HEADERS * pNtHeader=(IMAGE_NT_HEADERS *) (m_Image+GetImageDosHeaderPointer()->e_lfanew);
 		*pNtHeader=ntHeader;
 		return true;
 	}
+	return false;
+}
+
+IMAGE_DOS_HEADER	* PEStructure::GetImageDosHeaderPointer()
+{
+	if (!m_Image)
+	{
+		return NULL;
+	}
+	return (IMAGE_DOS_HEADER	*)m_Image;
+}
+
+IMAGE_NT_HEADERS	* PEStructure::GetImageNtHeaderPointer()
+{
+	if(!m_Image)
+	{
+		return NULL;
+	}
+	return (IMAGE_NT_HEADERS *) (m_Image+GetImageDosHeaderPointer()->e_lfanew);
+}
+
+DWORD		&PEStructure::GetEntryPoint()
+{
+	return GetImageNtHeaderPointer()->OptionalHeader.AddressOfEntryPoint;
+}
+
+bool PEStructure::IsDLL()
+{
+	//Is Dynamic Link Library 
+	return (GetImageNtHeaderPointer()->FileHeader.Characteristics&0x2002)==0x2002;
+}
+
+bool PEStructure::IsExec()
+{
+	if(!IsDLL())
+		return (GetImageNtHeaderPointer()->FileHeader.Characteristics&0x0002)!=0;
 	return false;
 }
