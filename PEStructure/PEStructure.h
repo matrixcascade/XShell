@@ -186,6 +186,19 @@ struct IMAGE_THUNK_DATA{
 	} u1;
 };
 
+//Import functions
+struct __IMAGE_IMPORT_BY_NAME {
+	WORD    Hint; //Function index 
+	char    *Name;//Function name
+};
+
+struct IMAGE_IMPORT_TABLE_INFO
+{
+	char *ImportName;
+	__IMAGE_IMPORT_BY_NAME *ImportTable;
+	int ImportCount;
+};
+
 class PEStructure
 {
 public:
@@ -208,8 +221,8 @@ public:
 	bool		IsImportFunctionRVA(int Tableindex,int FuncIndex);
 	bool		Dump(const char *pDumpFileName);
 	bool		UpdateNtHeader(IMAGE_NT_HEADERS ntHeader);
-	bool		AddSection(DWORD Characteristics,char Name[8],DWORD Size,void *CopyBuffer=NULL);
-
+	bool		AddSection(DWORD Characteristics,char Name[8],DWORD Size,DWORD &RVA,void *CopyBuffer=NULL);
+	bool		AddImportTables(IMAGE_IMPORT_TABLE_INFO ImportTables[],int Count);
 
 	void		free();
 

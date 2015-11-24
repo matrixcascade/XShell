@@ -67,7 +67,7 @@ void PEStructure::free()
 		{
 			delete [] m_Image;
 			m_Image=NULL;
-		}
+		}                                                                                                                                                                                                                                                                                                                                                                                                                                          
 }
 
 size_t PEStructure::RVA_To_FOA(size_t RVA)
@@ -476,12 +476,13 @@ bool PEStructure::Dump(const char *pDumpFileName)
 			}
 			pBufferOft+=WriteSize;
 		}
+		fclose(pf);
 		return true;
 	}
 	return false;
 }
 
-bool PEStructure::AddSection(DWORD Characteristics,char Name[8],DWORD Size,void *CopyBuffer/*=NULL*/)
+bool PEStructure::AddSection(DWORD Characteristics,char Name[8],DWORD Size,DWORD &RVA,void *CopyBuffer/*=NULL*/)
 {
 	IMAGE_SECTION_HEADER newSectionHeader;
 	newSectionHeader.Characteristics=Characteristics;
@@ -540,6 +541,8 @@ bool PEStructure::AddSection(DWORD Characteristics,char Name[8],DWORD Size,void 
 	else
 	newSectionHeader.VirtualAddress=m_ImageSectionHeaders[index].VirtualAddress+ResSectionSize;
 
+	//Return RVA
+	RVA=newSectionHeader.VirtualAddress;
 	newSectionHeader.SizeOfRawData=RawAllocSize;
 	
 	//End of file
@@ -626,4 +629,157 @@ bool PEStructure::IsExec()
 	if(!IsDLL())
 		return (GetImageNtHeaderPointer()->FileHeader.Characteristics&0x0002)!=0;
 	return false;
+}
+
+size_t GetImportByNameStructureSize(__IMAGE_IMPORT_BY_NAME *piibn)
+{
+	size_t externsize=0;
+	while(*(piibn->Name+externsize))
+	{
+		externsize++;
+	}
+	return sizeof(IMAGE_IMPORT_BY_NAME)+externsize;
+}
+
+size_t GetImportTableStructureSize(IMAGE_IMPORT_TABLE_INFO *iiti)
+{
+	size_t size=0;
+	size+=strlen(iiti->ImportName)+1;
+	for (int i=0;i<iiti->ImportCount;i++)
+	{
+		size+=GetImportByNameStructureSize(iiti->ImportTable+i)+/*INT*/sizeof(DWORD);
+	}
+	return size+/*Zero structure*/sizeof(DWORD);
+}
+
+bool PEStructure::AddImportTables(IMAGE_IMPORT_TABLE_INFO ImportTables[],int Count)
+{
+	if (Count==0)
+	{
+		return true;
+	}
+	size_t newSectionSize=0;
+	newSectionSize=(m_ImageImportDescriptors.size()+Count)*sizeof(IMAGE_IMPORT_DESCRIPTOR);
+	for (int i=0;i<Count;i++)
+	{
+		newSectionSize+=GetImportTableStructureSize(ImportTables+i);
+	}
+
+	newSectionSize+=/*Zero structure*/sizeof(IMAGE_IMPORT_DESCRIPTOR);
+
+	unsigned char *newBuffer=new unsigned char[newSectionSize];
+	if (newBuffer==NULL)
+	{
+		return false;
+	}
+
+	//Copy old importTable to buffer
+	for (unsigned int i=0;i<m_ImageImportDescriptors.size();i++)
+	{
+		memcpy(newBuffer+i*sizeof(IMAGE_IMPORT_DESCRIPTOR),&m_ImageImportDescriptors.at(i),sizeof(IMAGE_IMPORT_DESCRIPTOR));
+	}
+
+	DWORD RVA;
+
+	if (!AddSection(0x60000020,".rtab",newSectionSize,RVA))
+	{
+		delete [] newBuffer;
+		return false;
+	}
+	//Add new import table
+
+	//Locate new import table first
+
+	//Offset positions
+	DWORD IDescOffset;
+	DWORD IATOffset;
+	DWORD IByNameOffset;
+	DWORD NameOffset;
+
+
+	IDescOffset=sizeof(IMAGE_IMPORT_DESCRIPTOR)*(m_ImageImportDescriptors.size());
+	IATOffset=sizeof(IMAGE_IMPORT_DESCRIPTOR)*(m_ImageImportDescriptors.size()+Count+1);
+	IByNameOffset=IATOffset;
+	for (int i=0;i<Count;i++)
+	{
+		IByNameOffset+=(ImportTables[i].ImportCount+1)*sizeof(DWORD);
+	}
+	NameOffset=newSectionSize;
+	for (int i=0;i<Count;i++)
+	{
+		NameOffset-=(strlen(ImportTables[i].ImportName)+1);
+	}
+	
+	//////////////////////////////////////////////////////////////
+	//
+	//  IMAGE_IMPORT_DESCRIPTOR [MULT]
+	//  INT/IAT [MULT]
+	//  IMAGE_IMPORT_DESCRIPTOR [MULT]
+	/////////////////////////////////////////////////////////////
+
+	//Redirection
+	for (int i=0;i<Count;i++)
+	{
+
+		IMAGE_IMPORT_DESCRIPTOR *pdesc=(IMAGE_IMPORT_DESCRIPTOR *)(newBuffer+IDescOffset);
+		//Build IMAGE_IMPORT_DESCRIPTOR
+		pdesc->DUMMYUNIONNAME.OriginalFirstThunk=RVA+IATOffset;
+		pdesc->FirstThunk=RVA+IATOffset;
+		pdesc->ForwarderChain=0;
+		pdesc->TimeDateStamp=0;
+		pdesc->Name=RVA+NameOffset;
+		
+		
+		for (int j=0;j<ImportTables[i].ImportCount;j++)
+		{
+			//Build IAT
+			DWORD *pIAT=(DWORD *)(newBuffer+IATOffset);
+			*pIAT=IByNameOffset+RVA;
+			//IAT increase
+			IATOffset+=sizeof(DWORD);
+			
+			//Build IMPORT_BY_NAME
+			IMAGE_IMPORT_BY_NAME *piibn=(IMAGE_IMPORT_BY_NAME *)(newBuffer+IByNameOffset);
+			piibn->Hint=ImportTables[i].ImportTable[j].Hint;
+			strcpy((char *)piibn->Name,ImportTables[i].ImportTable[j].Name);
+
+			//IByNameOffset increase
+			IByNameOffset+=strlen(ImportTables[i].ImportTable[j].Name)+1;
+			IByNameOffset+=sizeof(DWORD);
+
+		}
+
+		//Build name
+		strcpy((char *)(newBuffer+NameOffset),ImportTables[i].ImportName);
+		//NameOffset increase
+		NameOffset+=strlen(ImportTables[i].ImportName)+1;
+
+
+		//End IAT
+		DWORD *pIAT=(DWORD *)(newBuffer+IATOffset);
+		*pIAT=0;
+
+		//Descriptor increase
+		IDescOffset+=sizeof(IMAGE_IMPORT_DESCRIPTOR);
+
+	}
+	//End Descriptor
+	IMAGE_IMPORT_DESCRIPTOR *pdesc=(IMAGE_IMPORT_DESCRIPTOR *)(newBuffer+IDescOffset);
+	memset(pdesc,0,sizeof(IMAGE_IMPORT_DESCRIPTOR));
+
+	//Copy to section
+	memcpy(m_Image+this->RVA_To_FOA(RVA),newBuffer,newSectionSize);
+
+	//free 
+	delete [] newBuffer;
+
+	//Redirection PE header
+	IMAGE_NT_HEADERS *pNtHeader=GetImageNtHeaderPointer();
+	pNtHeader->OptionalHeader.DataDirectory[1].VirtualAddress=RVA;
+	
+	GetImageNtHeaderPointer()->OptionalHeader.CheckSum=GetCheckSum();
+
+	ImageSolve(m_ImageSize);
+
+	return true;
 }
