@@ -240,11 +240,13 @@ public:
 	
 	IMAGE_IMPORT_BY_NAME GetImportFunction(int TableIndex,int FuncIndex);
 
-	IMAGE_DOS_HEADER	*GetImageDosHeaderPointer();
-	IMAGE_NT_HEADERS	*GetImageNtHeaderPointer();
+	IMAGE_DOS_HEADER	 *GetImageDosHeaderPointer();
+	IMAGE_NT_HEADERS	 *GetImageNtHeaderPointer();
+	IMAGE_SECTION_HEADER *GetSectionHeaderPointer(int Index);
 
 	size_t		GetFileSize();
-	size_t      RVA_To_FOA(size_t RVA);
+	size_t      RVA_To_FOA(DWORD RVA);
+	int			GetSectionIndexByRVA(DWORD RVA);
 private:
 	//////////////////////////////////////////////////////////////////////////
 	//Image operate functions

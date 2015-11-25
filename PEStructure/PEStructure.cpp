@@ -22,7 +22,7 @@ bool PEStructure::Load_PE_File( const char *fileName )
 	m_FileSize=ftell(m_pf);
 	fseek(m_pf,0,SEEK_SET);
 
-	if (m_FileSize%2)
+	if (!(m_FileSize%2))
 	{
 		m_Image=new unsigned char[m_FileSize];
 		m_ImageSize=m_FileSize;
@@ -69,8 +69,38 @@ void PEStructure::free()
 			m_Image=NULL;
 		}                                                                                                                                                                                                                                                                                                                                                                                                                                          
 }
+int PEStructure::GetSectionIndexByRVA(DWORD RVA)
+{
+	unsigned int StartSection;
+	unsigned int i;
 
-size_t PEStructure::RVA_To_FOA(size_t RVA)
+	//Calculate start section
+	for (i=0;i<m_ImageSectionHeaders.size()-1;i++)
+	{
+		if (m_ImageSectionHeaders[i].VirtualAddress<=RVA&&RVA<m_ImageSectionHeaders[i+1].VirtualAddress)
+		{
+			StartSection=i;
+			break;
+		}
+	}
+	if (i==m_ImageSectionHeaders.size()-1)
+	{
+		if (m_ImageSectionHeaders[i].VirtualAddress<=RVA&&
+			m_ImageSectionHeaders[i].VirtualAddress+m_ImageSectionHeaders[i].SizeOfRawData>=RVA)
+		{
+			StartSection=i;
+		}
+		else
+		{
+			//Error while 0
+			return 0;
+		}
+	}
+	return StartSection;
+}
+
+
+size_t PEStructure::RVA_To_FOA(DWORD RVA)
 {
 	unsigned int StartSection;
 	unsigned int i;
@@ -189,7 +219,7 @@ const char * PEStructure::GetImportFunctionName(int Tableindex,int FuncIndex)
 	}
 	IMAGE_IMPORT_FUNCTIONSMAP iinoa=m_ImageImportDescrtptorsMapFunctions[Tableindex].m_ImportFunctions[FuncIndex];
 	
-	if (iinoa.addr&((iinoa.addr|~iinoa.addr)>>1))
+	if (iinoa.addr&(~((iinoa.addr|~iinoa.addr)>>1)))
 	{
 		//RVA
 		return "";
@@ -502,6 +532,7 @@ bool PEStructure::AddSection(DWORD Characteristics,char Name[8],DWORD Size,DWORD
 
 
 	DWORD RawAllocSize;
+	DWORD DummyFillSize;
 	if (Size%FileAlign)
 	{
 		RawAllocSize=(Size/FileAlign+1)*FileAlign;
@@ -511,16 +542,29 @@ bool PEStructure::AddSection(DWORD Characteristics,char Name[8],DWORD Size,DWORD
 		RawAllocSize=Size;
 	}
 
-	unsigned char *NewImage=new unsigned char[m_ImageSize+RawAllocSize];
+	if (!(m_ImageSize%FileAlign))
+	{
+		//Resource file can not be file alignment
+		//Fill dummy space for image
+		DummyFillSize=(m_ImageSize/FileAlign+1)*FileAlign-m_ImageSize;
+	}
+	else
+	{
+		DummyFillSize=0;
+	}
+
+	unsigned char *NewImage=new unsigned char[m_ImageSize+RawAllocSize+DummyFillSize];
 	if (NewImage==NULL)
 	{
 		return false;
 	}
+	memset(NewImage,0,m_ImageSize+RawAllocSize+DummyFillSize);
+
 	memcpy(NewImage,m_Image,m_ImageSize);
 
 	if (CopyBuffer)
 	{
-		memcpy(NewImage+m_ImageSize,CopyBuffer,Size);
+		memcpy(NewImage+DummyFillSize+m_ImageSize,CopyBuffer,Size);
 	}
 	//Replace old image
 	delete [] m_Image;
@@ -536,6 +580,7 @@ bool PEStructure::AddSection(DWORD Characteristics,char Name[8],DWORD Size,DWORD
 	//Virtual address=Last section+size of last section
 	int index=m_ImageSectionHeaders.size()-1;
 	int ResSectionSize=m_ImageSectionHeaders[index].Misc.VirtualSize;
+
 	if(ResSectionSize%SectionAlign)
 	newSectionHeader.VirtualAddress=m_ImageSectionHeaders[index].VirtualAddress+SectionAlign*(ResSectionSize/SectionAlign+1);
 	else
@@ -546,7 +591,7 @@ bool PEStructure::AddSection(DWORD Characteristics,char Name[8],DWORD Size,DWORD
 	newSectionHeader.SizeOfRawData=RawAllocSize;
 	
 	//End of file
-	newSectionHeader.PointerToRawData=m_ImageSize;
+	newSectionHeader.PointerToRawData=m_ImageSize+DummyFillSize;
 
 	newSectionHeader.PointerToLinenumbers=0;
 	newSectionHeader.PointerToRelocations=0;
@@ -576,7 +621,7 @@ bool PEStructure::AddSection(DWORD Characteristics,char Name[8],DWORD Size,DWORD
 	pModifyNtHeader->OptionalHeader.CheckSum=GetCheckSum();
 
 	//Resolve
-	ImageSolve(m_ImageSize+RawAllocSize);
+	ImageSolve(m_ImageSize+RawAllocSize+DummyFillSize);
 	return true;
 
 _ERROR:
@@ -638,7 +683,7 @@ size_t GetImportByNameStructureSize(__IMAGE_IMPORT_BY_NAME *piibn)
 	{
 		externsize++;
 	}
-	return sizeof(IMAGE_IMPORT_BY_NAME)+externsize;
+	return 3+externsize;
 }
 
 size_t GetImportTableStructureSize(IMAGE_IMPORT_TABLE_INFO *iiti)
@@ -647,9 +692,9 @@ size_t GetImportTableStructureSize(IMAGE_IMPORT_TABLE_INFO *iiti)
 	size+=strlen(iiti->ImportName)+1;
 	for (int i=0;i<iiti->ImportCount;i++)
 	{
-		size+=GetImportByNameStructureSize(iiti->ImportTable+i)+/*INT*/sizeof(DWORD);
+		size+=GetImportByNameStructureSize(iiti->ImportTable+i)+/*INT*/sizeof(DWORD)+/*IAT*/sizeof(DWORD);
 	}
-	return size+/*Zero structure*/sizeof(DWORD);
+	return size+/*Zero structure*/sizeof(DWORD)*/*INT IAT*/2;
 }
 
 bool PEStructure::AddImportTables(IMAGE_IMPORT_TABLE_INFO ImportTables[],int Count)
@@ -681,7 +726,7 @@ bool PEStructure::AddImportTables(IMAGE_IMPORT_TABLE_INFO ImportTables[],int Cou
 
 	DWORD RVA;
 
-	if (!AddSection(0x60000020,".rtab",newSectionSize,RVA))
+	if (!AddSection(0xC0000040,".Silvana",newSectionSize,RVA))
 	{
 		delete [] newBuffer;
 		return false;
@@ -692,17 +737,17 @@ bool PEStructure::AddImportTables(IMAGE_IMPORT_TABLE_INFO ImportTables[],int Cou
 
 	//Offset positions
 	DWORD IDescOffset;
-	DWORD IATOffset;
+	DWORD INTIATOffset;
 	DWORD IByNameOffset;
 	DWORD NameOffset;
 
 
 	IDescOffset=sizeof(IMAGE_IMPORT_DESCRIPTOR)*(m_ImageImportDescriptors.size());
-	IATOffset=sizeof(IMAGE_IMPORT_DESCRIPTOR)*(m_ImageImportDescriptors.size()+Count+1);
-	IByNameOffset=IATOffset;
+	INTIATOffset=sizeof(IMAGE_IMPORT_DESCRIPTOR)*(m_ImageImportDescriptors.size()+Count+1);
+	IByNameOffset=INTIATOffset;
 	for (int i=0;i<Count;i++)
 	{
-		IByNameOffset+=(ImportTables[i].ImportCount+1)*sizeof(DWORD);
+		IByNameOffset+=(ImportTables[i].ImportCount+1)*sizeof(DWORD)*2;
 	}
 	NameOffset=newSectionSize;
 	for (int i=0;i<Count;i++)
@@ -723,8 +768,11 @@ bool PEStructure::AddImportTables(IMAGE_IMPORT_TABLE_INFO ImportTables[],int Cou
 
 		IMAGE_IMPORT_DESCRIPTOR *pdesc=(IMAGE_IMPORT_DESCRIPTOR *)(newBuffer+IDescOffset);
 		//Build IMAGE_IMPORT_DESCRIPTOR
-		pdesc->DUMMYUNIONNAME.OriginalFirstThunk=RVA+IATOffset;
-		pdesc->FirstThunk=RVA+IATOffset;
+		//Pointer to INT
+		pdesc->DUMMYUNIONNAME.OriginalFirstThunk=RVA+INTIATOffset;
+		
+		//Pointer to IAT
+		pdesc->FirstThunk=RVA+INTIATOffset+(ImportTables[i].ImportCount+1)*sizeof(DWORD);
 		pdesc->ForwarderChain=0;
 		pdesc->TimeDateStamp=0;
 		pdesc->Name=RVA+NameOffset;
@@ -732,11 +780,15 @@ bool PEStructure::AddImportTables(IMAGE_IMPORT_TABLE_INFO ImportTables[],int Cou
 		
 		for (int j=0;j<ImportTables[i].ImportCount;j++)
 		{
+			//Build INT
+			DWORD *pINT=(DWORD *)(newBuffer+INTIATOffset);
+			*pINT=IByNameOffset+RVA;
 			//Build IAT
-			DWORD *pIAT=(DWORD *)(newBuffer+IATOffset);
+			DWORD *pIAT=pINT+ImportTables[i].ImportCount+1;
 			*pIAT=IByNameOffset+RVA;
-			//IAT increase
-			IATOffset+=sizeof(DWORD);
+
+			//INT/IAT increase
+			INTIATOffset+=sizeof(DWORD);
 			
 			//Build IMPORT_BY_NAME
 			IMAGE_IMPORT_BY_NAME *piibn=(IMAGE_IMPORT_BY_NAME *)(newBuffer+IByNameOffset);
@@ -755,8 +807,11 @@ bool PEStructure::AddImportTables(IMAGE_IMPORT_TABLE_INFO ImportTables[],int Cou
 		NameOffset+=strlen(ImportTables[i].ImportName)+1;
 
 
+		//End INT
+		DWORD *pINT=(DWORD *)(newBuffer+INTIATOffset);
+		*pINT=0;
 		//End IAT
-		DWORD *pIAT=(DWORD *)(newBuffer+IATOffset);
+		DWORD *pIAT=pINT+(ImportTables[i].ImportCount+1);
 		*pIAT=0;
 
 		//Descriptor increase
@@ -776,10 +831,24 @@ bool PEStructure::AddImportTables(IMAGE_IMPORT_TABLE_INFO ImportTables[],int Cou
 	//Redirection PE header
 	IMAGE_NT_HEADERS *pNtHeader=GetImageNtHeaderPointer();
 	pNtHeader->OptionalHeader.DataDirectory[1].VirtualAddress=RVA;
-	
+	pNtHeader->OptionalHeader.DataDirectory[1].Size=sizeof(IMAGE_IMPORT_DESCRIPTOR)*(m_ImageImportDescriptors.size()+Count);
+	pNtHeader->OptionalHeader.DataDirectory[12].VirtualAddress=0;
+	pNtHeader->OptionalHeader.DataDirectory[12].Size=0;
 	GetImageNtHeaderPointer()->OptionalHeader.CheckSum=GetCheckSum();
 
+
+	GetSectionHeaderPointer(1)->Characteristics=0xC0000040;
 	ImageSolve(m_ImageSize);
 
 	return true;
+}
+
+IMAGE_SECTION_HEADER * PEStructure::GetSectionHeaderPointer(int Index)
+{
+	if (Index>GetImageNtHeaderPointer()->FileHeader.NumberOfSections-1)
+	{
+		return NULL;
+	}
+	return (IMAGE_SECTION_HEADER *)ImagePointer(GetImageDosHeaderPointer()->e_lfanew
+		+sizeof(IMAGE_NT_HEADERS)+sizeof(IMAGE_SECTION_HEADER)*Index);
 }
