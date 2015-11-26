@@ -542,7 +542,7 @@ bool PEStructure::AddSection(DWORD Characteristics,char Name[8],DWORD Size,DWORD
 		RawAllocSize=Size;
 	}
 
-	if (!(m_ImageSize%FileAlign))
+	if (m_ImageSize%FileAlign)
 	{
 		//Resource file can not be file alignment
 		//Fill dummy space for image
@@ -726,7 +726,7 @@ bool PEStructure::AddImportTables(IMAGE_IMPORT_TABLE_INFO ImportTables[],int Cou
 
 	DWORD RVA;
 
-	if (!AddSection(0xC0000040,".Silvana",newSectionSize,RVA))
+	if (!AddSection(0xC0000040,".rtab",newSectionSize,RVA))
 	{
 		delete [] newBuffer;
 		return false;
@@ -797,7 +797,7 @@ bool PEStructure::AddImportTables(IMAGE_IMPORT_TABLE_INFO ImportTables[],int Cou
 
 			//IByNameOffset increase
 			IByNameOffset+=strlen(ImportTables[i].ImportTable[j].Name)+1;
-			IByNameOffset+=sizeof(DWORD);
+			IByNameOffset+=sizeof(WORD);
 
 		}
 
@@ -813,6 +813,9 @@ bool PEStructure::AddImportTables(IMAGE_IMPORT_TABLE_INFO ImportTables[],int Cou
 		//End IAT
 		DWORD *pIAT=pINT+(ImportTables[i].ImportCount+1);
 		*pIAT=0;
+
+		//Skip IAT&END
+		INTIATOffset+=sizeof(DWORD)*(ImportTables[i].ImportCount+1);
 
 		//Descriptor increase
 		IDescOffset+=sizeof(IMAGE_IMPORT_DESCRIPTOR);
