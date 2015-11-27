@@ -855,3 +855,85 @@ IMAGE_SECTION_HEADER * PEStructure::GetSectionHeaderPointer(int Index)
 	return (IMAGE_SECTION_HEADER *)ImagePointer(GetImageDosHeaderPointer()->e_lfanew
 		+sizeof(IMAGE_NT_HEADERS)+sizeof(IMAGE_SECTION_HEADER)*Index);
 }
+
+IMAGE_RESOURCE_DIRECTORY	* PEStructure::GetImageRootResourceDirectoryPointer()
+{
+	DWORD offset=RVA_To_FOA(GetImageNtHeaderPointer()->OptionalHeader.DataDirectory[2].VirtualAddress);
+	if (offset==0)
+	{
+		return NULL;
+	}
+	return (IMAGE_RESOURCE_DIRECTORY *)(m_Image+offset);
+
+}
+
+int PEStructure::GetImageResourceDirectoryCount(IMAGE_RESOURCE_DIRECTORY *pdir)
+{
+	return pdir->NumberOfIdEntries+pdir->NumberOfNamedEntries;
+}
+
+size_t PEStructure::ResourceOffset_To_FOA(DWORD Oft)
+{
+	DWORD ResRVA=GetImageNtHeaderPointer()->OptionalHeader.DataDirectory[2].VirtualAddress+Oft;
+	return RVA_To_FOA(ResRVA);
+}
+
+void PEStructure::EnumImageResourceData(IMAGE_RESOURCE_DIRECTORY *Rootdir,void (*callBackFunction)(WORD *id,wchar_t *Name,DWORD length,DWORD *offsetToDataEnter,DWORD *size1,DWORD *DataRVA,void *Buffer))
+{
+	WORD   *v_id=NULL;
+	wchar_t *v_Name=NULL;
+	DWORD   v_length;
+	DWORD   *v_offsetToDataEnter;
+	DWORD   *v_size1;
+	DWORD   *v_DataRVA;
+	void	*v_Buffer;
+
+// 	if (callBackFunction==NULL)
+// 	{
+// 		return;
+// 	}
+	//Skip IMAGE_RESOURCE_DIRECTORY
+	IMAGE_RESOURCE_DIRECTORY_ENTRY *pirde=(IMAGE_RESOURCE_DIRECTORY_ENTRY *)(Rootdir+1);
+	for (int i=0;i<Rootdir->NumberOfIdEntries+Rootdir->NumberOfNamedEntries;i++)
+	{
+		if (!pirde->DUMMYUNIONNAME2.DUMMYSTRUCTNAME2.DataIsDirectory)
+		{
+			IMAGE_RESOURCE_DATA_ENTRY *pirdate=(IMAGE_RESOURCE_DATA_ENTRY *)(m_Image+ResourceOffset_To_FOA(pirde->DUMMYUNIONNAME2.OffsetToData&0x7fffffff));
+			if (pirde->DUMMYUNIONNAME.DUMMYSTRUCTNAME.NameIsString)
+			{
+				v_Name=GetResourceWchar(pirde->DUMMYUNIONNAME.Name&0x7fffffff,v_length);
+			}
+			else
+			{
+				v_id=&pirde->DUMMYUNIONNAME.Id;
+			}
+
+			v_offsetToDataEnter=&pirde->DUMMYUNIONNAME2.OffsetToData;
+			v_size1=&pirdate->Size;
+			v_DataRVA=&pirdate->OffsetToData;
+
+			if(ImagePointer(RVA_To_FOA(pirdate->OffsetToData)))
+			v_Buffer=ImagePointer(RVA_To_FOA(pirdate->OffsetToData));
+
+			if(callBackFunction)
+			callBackFunction(v_id,v_Name,v_length,v_offsetToDataEnter,v_size1,v_DataRVA,v_Buffer);
+
+		}
+		else
+		{
+			EnumImageResourceData((IMAGE_RESOURCE_DIRECTORY *)(m_Image+ResourceOffset_To_FOA(pirde->DUMMYUNIONNAME2.OffsetToData&0x7fffffff)),callBackFunction);
+		}
+	}
+
+
+}
+
+
+wchar_t * PEStructure::GetResourceWchar(DWORD offset,DWORD &length)
+{
+	size_t _offset=ResourceOffset_To_FOA(offset);
+	IMAGE_RESOURCE_DIR_STRING_U *pStrU=(IMAGE_RESOURCE_DIR_STRING_U *)(m_Image+_offset);
+	length=pStrU->Length;
+
+	return (pStrU->NameString);
+}

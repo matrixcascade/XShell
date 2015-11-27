@@ -8,7 +8,9 @@
 //////////////////////////////////////////////////////////////////////////
 
 #include <stdio.h>
+#include <stdio.h>
 #include <vector>
+#include <string>
 
 #define  IMPORT_TABLE_NAME_MAXLEN		256
 #define  IMPORT_FUNCTION_NAME_MAXLEN	256
@@ -199,6 +201,48 @@ struct IMAGE_IMPORT_TABLE_INFO
 	int ImportCount;
 };
 
+//Resource directory
+struct IMAGE_RESOURCE_DIRECTORY {
+	DWORD   Characteristics;
+	DWORD   TimeDateStamp;
+	WORD    MajorVersion;
+	WORD    MinorVersion;
+	WORD    NumberOfNamedEntries;
+	WORD    NumberOfIdEntries;
+	//  IMAGE_RESOURCE_DIRECTORY_ENTRY DirectoryEntries[];
+};
+
+struct IMAGE_RESOURCE_DIRECTORY_ENTRY {
+	union {
+		struct {
+			DWORD NameOffset:31;
+			DWORD NameIsString:1;
+		} DUMMYSTRUCTNAME;
+		DWORD   Name;
+		WORD    Id;
+	} DUMMYUNIONNAME;
+	union {
+		DWORD   OffsetToData;
+		struct {
+			DWORD   OffsetToDirectory:31;
+			DWORD   DataIsDirectory:1;
+		} DUMMYSTRUCTNAME2;
+	} DUMMYUNIONNAME2;
+};
+
+struct IMAGE_RESOURCE_DIR_STRING_U {
+	WORD    Length;
+	wchar_t  NameString[ 1 ];
+};
+
+
+struct IMAGE_RESOURCE_DATA_ENTRY {
+	DWORD   OffsetToData;
+	DWORD   Size;
+	DWORD   CodePage;
+	DWORD   Reserved;
+};
+
 class PEStructure
 {
 public:
@@ -225,6 +269,8 @@ public:
 	bool		AddImportTables(IMAGE_IMPORT_TABLE_INFO ImportTables[],int Count);
 
 	void		free();
+	void        EnumImageResourceData(IMAGE_RESOURCE_DIRECTORY *Rootdir,void (*callBackFunction)(WORD *id,wchar_t *Name,DWORD length,DWORD *offsetToDataEnter,DWORD *size1,DWORD *DataRVA,void *Buffer));
+	wchar_t    *GetResourceWchar(DWORD offset,DWORD &length);
 
 	DWORD		&GetEntryPoint();
 	DWORD		GetCheckSum();
@@ -233,19 +279,24 @@ public:
 
 	int			GetImportTableCount(){return m_ImageImportDescriptors.size();}
 	int			GetImportFunctionsCount(int TableIndex);
+	int			GetImageResourceDirectoryCount(IMAGE_RESOURCE_DIRECTORY *pdir);
 
 	const char *GetImportTableName(int Tableindex);
 	const char *GetImportFunctionName(int Tableindex,int FuncIndex);
 
 	
-	IMAGE_IMPORT_BY_NAME GetImportFunction(int TableIndex,int FuncIndex);
+	IMAGE_IMPORT_BY_NAME		GetImportFunction(int TableIndex,int FuncIndex);
 
-	IMAGE_DOS_HEADER	 *GetImageDosHeaderPointer();
-	IMAGE_NT_HEADERS	 *GetImageNtHeaderPointer();
-	IMAGE_SECTION_HEADER *GetSectionHeaderPointer(int Index);
+	IMAGE_DOS_HEADER			*GetImageDosHeaderPointer();
+	IMAGE_NT_HEADERS			*GetImageNtHeaderPointer();
+	IMAGE_SECTION_HEADER		*GetSectionHeaderPointer(int Index);
+	IMAGE_RESOURCE_DIRECTORY	*GetImageRootResourceDirectoryPointer();
+
+
 
 	size_t		GetFileSize();
 	size_t      RVA_To_FOA(DWORD RVA);
+	size_t      ResourceOffset_To_FOA(DWORD Oft);
 	int			GetSectionIndexByRVA(DWORD RVA);
 private:
 	//////////////////////////////////////////////////////////////////////////
