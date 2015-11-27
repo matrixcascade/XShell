@@ -9,28 +9,9 @@
 #include <windows.h>
 #include <stdio.h>
 #include <string.h>
-#include <olectl.h>
+#include "../../PEStructure/PEStructure.h"
 
-#pragma comment(lib, "oleaut32.lib")
-
-#define XINFESTED_FLAG_GUIDS_STRING "c809c2eac8a4495c8720a6ee2e1e63f9"
-
-//////////////////////////////////////////////////////////////////////////
-//Infested flag structure
-//////////////////////////////////////////////////////////////////////////
-struct XINFESTED_FLAG 
-{
-char    GUIDs[32];								//GUID for mark
-size_t  ResourceOffset;							//Resource file offset 
-size_t  ResourceSize;							//Resource file size
-XINFESTED_FLAG()
-{
-	strcpy(GUIDs,XINFESTED_FLAG_GUIDS_STRING);
-	ResourceOffset=(size_t)-1;
-	ResourceSize=0;
-}
-};
-
+#define XINFESTED_SECTION_STRING ".xinf"
 
 
 //************************************

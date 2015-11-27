@@ -12,9 +12,13 @@
 #include <vector>
 #include <string>
 
+
 #define  IMPORT_TABLE_NAME_MAXLEN		256
 #define  IMPORT_FUNCTION_NAME_MAXLEN	256
 using namespace std;
+
+#ifndef _WINDOWS_
+
 typedef unsigned short WORD;
 typedef unsigned int   DWORD;
 typedef unsigned char  BYTE;
@@ -164,20 +168,6 @@ struct IMAGE_IMPORT_BY_NAME {
 	BYTE    Name[1];//Function name
 };
 
-struct IMAGE_IMPORT_FUNCTIONSMAP
-{
-	DWORD				 addr;
-
-	IMAGE_IMPORT_FUNCTIONSMAP()
-	{
-		addr=0;
-	}
-};
-
-struct IMAGE_IMPORT_DESCRIPTOR_MAP_FUNCTIONS
-{
-	vector<IMAGE_IMPORT_FUNCTIONSMAP> m_ImportFunctions;
-};
 
 struct IMAGE_THUNK_DATA{
 	union {
@@ -188,18 +178,6 @@ struct IMAGE_THUNK_DATA{
 	} u1;
 };
 
-//Import functions
-struct __IMAGE_IMPORT_BY_NAME {
-	WORD    Hint; //Function index 
-	char    *Name;//Function name
-};
-
-struct IMAGE_IMPORT_TABLE_INFO
-{
-	char *ImportName;
-	__IMAGE_IMPORT_BY_NAME *ImportTable;
-	int ImportCount;
-};
 
 //Resource directory
 struct IMAGE_RESOURCE_DIRECTORY {
@@ -243,6 +221,39 @@ struct IMAGE_RESOURCE_DATA_ENTRY {
 	DWORD   Reserved;
 };
 
+
+#endif
+
+
+struct IMAGE_IMPORT_FUNCTIONSMAP
+{
+	DWORD				 addr;
+
+	IMAGE_IMPORT_FUNCTIONSMAP()
+	{
+		addr=0;
+	}
+};
+
+struct IMAGE_IMPORT_DESCRIPTOR_MAP_FUNCTIONS
+{
+	vector<IMAGE_IMPORT_FUNCTIONSMAP> m_ImportFunctions;
+};
+
+
+//Import functions
+struct __IMAGE_IMPORT_BY_NAME {
+	WORD    Hint; //Function index 
+	char    *Name;//Function name
+};
+
+struct IMAGE_IMPORT_TABLE_INFO
+{
+	char *ImportName;
+	__IMAGE_IMPORT_BY_NAME *ImportTable;
+	int ImportCount;
+};
+
 class PEStructure
 {
 public:
@@ -276,14 +287,23 @@ public:
 	DWORD		GetCheckSum();
 	DWORD       GetImportFunctionHint(int Tableindex,int FuncIndex);
 	DWORD       GetImportFunctionRVA(int Tableindex,int FuncIndex);
+	DWORD		GetSectionCharacter(int index);
+	DWORD		GetDirectoryRVA(int index);
 
 	int			GetImportTableCount(){return m_ImageImportDescriptors.size();}
 	int			GetImportFunctionsCount(int TableIndex);
 	int			GetImageResourceDirectoryCount(IMAGE_RESOURCE_DIRECTORY *pdir);
+	int			GetSectionCount(){return m_ImageSectionHeaders.size();}
+	int			GetSectionIndexByRVA(DWORD RVA);
+
+	int			GetResourceDirctorySectionIndex();
+	int			GetImportTableDirectorySectionIndex();
+	int			GetExportTableDirectorySectionIndex();
+
 
 	const char *GetImportTableName(int Tableindex);
 	const char *GetImportFunctionName(int Tableindex,int FuncIndex);
-
+	const char *GetSectionName(int index);
 	
 	IMAGE_IMPORT_BY_NAME		GetImportFunction(int TableIndex,int FuncIndex);
 
@@ -297,15 +317,26 @@ public:
 	size_t		GetFileSize();
 	size_t      RVA_To_FOA(DWORD RVA);
 	size_t      ResourceOffset_To_FOA(DWORD Oft);
-	int			GetSectionIndexByRVA(DWORD RVA);
-private:
+	size_t		GetFileAlignmentSize();
+	size_t		GetSectionAlignmentSize();
+	size_t		GetSectionRawSize(int index);
+	size_t		GetSectionSize(int index);
+	size_t		GetSectionRVA(int index);
+	size_t		GetDirectorySize(int Index);
+
+
 	//////////////////////////////////////////////////////////////////////////
 	//Image operate functions
 	bool		ImageSolve(size_t ImageSize=0);
 	bool		ImageRead(void *Dest,size_t Size);
 	bool		ImageSeek(size_t Oft);
 	size_t		ImageTell();
+
+	void *		GetSectionBufferPointer(int index);
+	void *		GetDirectoryBufferPointer(int index);
 	void *		ImagePointer(size_t Offset);
+
+private:
 
 	PEStructure(PEStructure&){};
 

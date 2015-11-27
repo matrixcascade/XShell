@@ -888,10 +888,10 @@ void PEStructure::EnumImageResourceData(IMAGE_RESOURCE_DIRECTORY *Rootdir,void (
 	DWORD   *v_DataRVA;
 	void	*v_Buffer;
 
-// 	if (callBackFunction==NULL)
-// 	{
-// 		return;
-// 	}
+	if (callBackFunction==NULL)
+	{
+		return;
+	}
 	//Skip IMAGE_RESOURCE_DIRECTORY
 	IMAGE_RESOURCE_DIRECTORY_ENTRY *pirde=(IMAGE_RESOURCE_DIRECTORY_ENTRY *)(Rootdir+1);
 	for (int i=0;i<Rootdir->NumberOfIdEntries+Rootdir->NumberOfNamedEntries;i++)
@@ -936,4 +936,83 @@ wchar_t * PEStructure::GetResourceWchar(DWORD offset,DWORD &length)
 	length=pStrU->Length;
 
 	return (pStrU->NameString);
+}
+
+const char * PEStructure::GetSectionName(int index)
+{
+	if (index>=m_ImageSectionHeaders.size())
+	{
+		return NULL;
+	}
+	return (const char *)m_ImageSectionHeaders.at(index).Name;
+}
+
+int PEStructure::GetResourceDirctorySectionIndex()
+{
+	DWORD RVA=GetImageNtHeaderPointer()->OptionalHeader.DataDirectory[2].VirtualAddress;
+	return GetSectionIndexByRVA(RVA);
+}
+
+int PEStructure::GetImportTableDirectorySectionIndex()
+{
+	DWORD RVA=GetImageNtHeaderPointer()->OptionalHeader.DataDirectory[1].VirtualAddress;
+	return GetSectionIndexByRVA(RVA);
+}
+
+int PEStructure::GetExportTableDirectorySectionIndex()
+{
+	DWORD RVA=GetImageNtHeaderPointer()->OptionalHeader.DataDirectory[0].VirtualAddress;
+	return GetSectionIndexByRVA(RVA);
+}
+
+size_t PEStructure::GetFileAlignmentSize()
+{
+	return GetImageNtHeaderPointer()->OptionalHeader.FileAlignment;
+}
+
+size_t PEStructure::GetSectionAlignmentSize()
+{
+	return GetImageNtHeaderPointer()->OptionalHeader.SectionAlignment;
+}
+
+
+
+size_t PEStructure::GetSectionRawSize(int index)
+{
+	return m_ImageSectionHeaders[index].SizeOfRawData;
+}
+
+size_t PEStructure::GetSectionSize(int index)
+{
+	return m_ImageSectionHeaders[index].Misc.VirtualSize;
+}
+
+DWORD PEStructure::GetSectionCharacter(int index)
+{
+	return m_ImageSectionHeaders[index].Characteristics;
+}
+
+size_t PEStructure::GetSectionRVA(int index)
+{
+	return m_ImageSectionHeaders[index].VirtualAddress;
+}
+
+void * PEStructure::GetSectionBufferPointer(int index)
+{
+	return m_Image+RVA_To_FOA(GetSectionRVA(index));
+}
+
+size_t PEStructure::GetDirectorySize(int Index)
+{
+	return GetImageNtHeaderPointer()->OptionalHeader.DataDirectory[Index].Size;
+}
+
+void * PEStructure::GetDirectoryBufferPointer(int index)
+{
+	return m_Image+RVA_To_FOA(GetImageNtHeaderPointer()->OptionalHeader.DataDirectory[index].VirtualAddress);
+}
+
+DWORD PEStructure::GetDirectoryRVA(int index)
+{
+	return GetImageNtHeaderPointer()->OptionalHeader.DataDirectory[index].VirtualAddress;
 }

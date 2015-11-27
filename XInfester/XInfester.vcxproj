@@ -67,6 +67,11 @@
   <ItemGroup>
     <ClCompile Include="src\XInfester.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\PEStructure\PEStructure.vcxproj">
+      <Project>{d3d1b0a3-bb69-4d98-8a89-9a7776895682}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
