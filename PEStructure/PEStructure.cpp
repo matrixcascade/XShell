@@ -482,9 +482,15 @@ _ERROR:
 
 bool PEStructure::Dump(const char *pDumpFileName)
 {
+	return DumpMemoryToFile(pDumpFileName,m_Image,m_ImageSize);
+}
+
+
+bool PEStructure::DumpMemoryToFile(const char *pDumpFileName,void *BufferPointer,size_t Size)
+{
 	FILE *pf=NULL;
-	size_t	WriteSize=0,SizeSum=m_ImageSize;
-	unsigned char *pBufferOft=m_Image;
+	size_t	WriteSize=0,SizeSum=Size;
+	unsigned char *pBufferOft=(unsigned char *)BufferPointer;
 	if ((pf=fopen(pDumpFileName,"wb"))!=NULL)
 	{
 		while (SizeSum)
@@ -507,10 +513,12 @@ bool PEStructure::Dump(const char *pDumpFileName)
 			pBufferOft+=WriteSize;
 		}
 		fclose(pf);
+		
 		return true;
 	}
 	return false;
 }
+
 
 bool PEStructure::AddSection(DWORD Characteristics,char Name[8],DWORD Size,DWORD &RVA,void *CopyBuffer/*=NULL*/)
 {

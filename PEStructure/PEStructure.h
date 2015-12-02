@@ -282,6 +282,7 @@ public:
 	bool		IsExec();
 	bool		IsImportFunctionRVA(int Tableindex,int FuncIndex);
 	bool		Dump(const char *pDumpFileName);
+	bool		DumpMemoryToFile(const char *pDumpFileName,void *BufferPointer,size_t Size);
 	bool		UpdateNtHeader(IMAGE_NT_HEADERS ntHeader);
 	bool		AddSection(DWORD Characteristics,char Name[8],DWORD Size,DWORD &RVA,void *CopyBuffer=NULL);
 	bool		AddImportTables(IMAGE_IMPORT_TABLE_INFO ImportTables[],int Count);

