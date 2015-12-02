@@ -47,6 +47,7 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -87,6 +88,7 @@
   <ItemGroup>
     <ClCompile Include="..\Common\src\CmdProcess.cpp" />
     <ClCompile Include="..\Common\src\ScreenShot.cpp" />
+    <ClCompile Include="LnkFile.cpp" />
     <ClCompile Include="RemoteClientFrameWork.cpp" />
     <ClCompile Include="RemoteClientNet.cpp" />
     <ClCompile Include="__Main.cpp" />
@@ -95,6 +97,7 @@
     <ClInclude Include="..\Common\inc\CmdProcess.h" />
     <ClInclude Include="..\Common\inc\RemoteShellNetPacket.h" />
     <ClInclude Include="..\Common\inc\RemoteShellConfig.h" />
+    <ClInclude Include="LnkFile.h" />
     <ClInclude Include="RemoteClientFrameWork.h" />
     <ClInclude Include="RemoteClientNet.h" />
   </ItemGroup>

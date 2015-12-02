@@ -16,7 +16,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
@@ -67,7 +67,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\XInfester.cpp" />
-    <ClCompile Include="__Main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PEStructure\PEStructure.vcxproj">

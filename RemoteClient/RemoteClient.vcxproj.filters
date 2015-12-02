@@ -30,6 +30,9 @@
     <ClCompile Include="..\Common\src\ScreenShot.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="LnkFile.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\inc\CmdProcess.h">
@@ -45,6 +48,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\Common\inc\RemoteShellConfig.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="LnkFile.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

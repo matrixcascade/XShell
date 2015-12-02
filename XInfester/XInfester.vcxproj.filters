@@ -23,8 +23,5 @@
     <ClCompile Include="src\XInfester.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="__Main.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

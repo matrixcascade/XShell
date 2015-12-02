@@ -36,4 +36,4 @@ void XInfester_Run();
 // Qualifier:
 // Parameter: const char * pDestFileName : The file will be infest
 //************************************
-BOOL XInfester_InfestFile(const char *pDestFileName);
+BOOL XInfester_InfectFile(const char *pDestFileName);
