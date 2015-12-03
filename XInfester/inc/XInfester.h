@@ -11,8 +11,8 @@
 #include <string.h>
 #include "../../PEStructure/PEStructure.h"
 
-#define XINFESTED_SECTION_STRING ".xinf"
-
+#define XINFESTED_SOURCE_SECTION_STRING		".xinf"
+#define XINFESTED_RESOURCE_SECTION_STRING	".rexinf"
 
 //************************************
 // Method:    XInfester_Run

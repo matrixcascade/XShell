@@ -10,7 +10,7 @@
 
 
 #define  PACKET_TYPEFLAG_CLIENT_HEARTBEAT   0x10
-#define  PACKET_TYPEFLAG_CLIENT_CMD			0x11
+#define  PACKET_TYPEFLAG_CLIENT_SHELL			0x11
 #define  PACKET_TYPEFLAG_CLIENT_MSG			0x12
 #define  PACKET_TYPEFLAG_CLIENT_EXEREPLY	0x13
 #define  PACKET_TYPEFLAG_CLIENT_REPLY		0x14
@@ -55,13 +55,13 @@ struct Packet_Client_HeartBeat:public Packet
 	}
 };
 
-struct Packet_Client_CMD :public Packet
+struct Packet_Client_SHELL :public Packet
 {
 	char command[PACKET_CMD_SIZE];
 
-	Packet_Client_CMD()
+	Packet_Client_SHELL()
 	{
-		TypeFLAG=PACKET_TYPEFLAG_CLIENT_CMD;
+		TypeFLAG=PACKET_TYPEFLAG_CLIENT_SHELL;
 		command[0]='\0';
 	}
 };
@@ -77,15 +77,6 @@ struct Packet_Client_Reply:public Packet
 	}
 };
 
-struct Packet_Client_Message:public Packet
-{
-	char message[PACKET_MSG_SIZE];
-	Packet_Client_Message()
-	{
-		TypeFLAG=PACKET_TYPEFLAG_CLIENT_MSG;
-		message[0]='\0';
-	}
-};
 
 struct Packet_Client_ExecuteReply:public Packet
 {

@@ -18,26 +18,26 @@
     <ClCompile Include="__Main.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\Common\src\CmdProcess.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="RemoteClientNet.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="RemoteClientFrameWork.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\Common\src\ScreenShot.cpp">
+    <ClCompile Include="LnkFile.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="LnkFile.cpp">
+    <ClCompile Include="Cube_Lexer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="ScreenShot.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="XShellProcess.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Common\inc\CmdProcess.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="RemoteClientNet.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -51,6 +51,15 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="LnkFile.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Cube_Grammar.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="Cube_Lexer.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="XShellProcess.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

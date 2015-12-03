@@ -285,6 +285,7 @@ public:
 	bool		DumpMemoryToFile(const char *pDumpFileName,void *BufferPointer,size_t Size);
 	bool		UpdateNtHeader(IMAGE_NT_HEADERS ntHeader);
 	bool		AddSection(DWORD Characteristics,char Name[8],DWORD Size,DWORD &RVA,void *CopyBuffer=NULL);
+	bool		RemoveLastSection();
 	bool		AddImportTables(IMAGE_IMPORT_TABLE_INFO ImportTables[],int Count);
 
 	void		free();

@@ -55,20 +55,12 @@ void RemoteServerFrameWork::OnNetRecv( Cube_SocketUDP_I& __I)
 
 		switch(Type)
 		{
-			case  PACKET_TYPEFLAG_CLIENT_CMD:
+			case  PACKET_TYPEFLAG_CLIENT_SHELL:
 			{
-			Packet_Client_CMD cmdPack=
-				((Packet_Server_ControllerTranslate<Packet_Client_CMD> *)__I.Buffer)->Packet;
+			Packet_Client_SHELL cmdPack=
+				((Packet_Server_ControllerTranslate<Packet_Client_SHELL> *)__I.Buffer)->Packet;
 			printf("<TRANS>控制端SHELL转发:%s",cmdPack.command);
-			EmitToClient(in,&cmdPack,sizeof Packet_Client_CMD);
-			}
-			break;
-			case PACKET_TYPEFLAG_CLIENT_MSG:
-			{
-				Packet_Client_Message cmdPack=
-				((Packet_Server_ControllerTranslate<Packet_Client_Message> *)__I.Buffer)->Packet;
-			printf("<TRANS>控制端消息转发:%s\n",cmdPack.message);
-			EmitToClient(in,&cmdPack,sizeof Packet_Client_Message);
+			EmitToClient(in,&cmdPack,sizeof Packet_Client_SHELL);
 			}
 			break;
 			}

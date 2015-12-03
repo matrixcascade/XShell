@@ -7,7 +7,7 @@
 #include "../ParallelFileTransfer/ParalleFileTransfer.h"
 
 #define  REMOTECONTROLLER_FSM_DISCONNECT 0
-#define  REMOTECONTROLLER_FSM_NORMAL     1
+#define  REMOTECONTROLLER_FSM_STANDBY     1
 #define  REMOTECONTROLLER_FSM_CONNECT    2
 
 
@@ -40,9 +40,9 @@ public:
 	~RemoteControllerFrameWork(void);
 	BOOL Initialize();
 	void Run();
-	void OnNormalCommand(char *String);
-	void OnConnectCommand(char *String);
-	void OnDisconnectCommand(char *String);
+	void OnNormalCommand();
+	void OnFileConnectCommand(char *String);
+	void OnDisconnectCommand();
 
 	BOOL WaitForReply();
 	BOOL IsServer(SOCKADDR_IN in);

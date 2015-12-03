@@ -92,24 +92,24 @@ void RemoteControllerFrameWork::OnCommand( char *String )
 
 	if (m_FSM==REMOTECONTROLLER_FSM_CONNECT)
 	{
-		if(strcmp(String,REMOTESHELL_CCMD_EXIT)==0)
+		if(strcmp(String,REMOTESHELL_CCMD_QUIT)==0)
 		{
 			OnExitConnect();
 			return;
 		}
-		OnConnectCommand(String);
+		OnFileConnectCommand(String);
 	}
-	else if(m_FSM==REMOTECONTROLLER_FSM_NORMAL)
+	else if(m_FSM==REMOTECONTROLLER_FSM_STANDBY)
 	{
-		OnNormalCommand(String);
+		OnNormalCommand();
 	}
 	else if(m_FSM==REMOTECONTROLLER_FSM_DISCONNECT)
 	{
-		OnDisconnectCommand(String);
+		OnDisconnectCommand();
 	}
 }
 
-void RemoteControllerFrameWork::OnNormalCommand( char *String )
+void RemoteControllerFrameWork::OnNormalCommand()
 {
 	CubeGrammarSentence Sen;
 	unsigned int SenType;
@@ -169,7 +169,7 @@ void RemoteControllerFrameWork::OnCommandList()
 	}
 	else
 	{
-		m_FSM=REMOTECONTROLLER_FSM_NORMAL;
+		m_FSM=REMOTECONTROLLER_FSM_STANDBY;
 		OnListClientTable();
 	}
 }
@@ -177,7 +177,7 @@ void RemoteControllerFrameWork::OnCommandList()
 void RemoteControllerFrameWork::OnExitConnect()
 {
 	m_CurrentOperateClient=-1;
-	m_FSM=REMOTECONTROLLER_FSM_NORMAL;
+	m_FSM=REMOTECONTROLLER_FSM_STANDBY;
 }
 
 void RemoteControllerFrameWork::OnNetRecv( Cube_SocketUDP_I & __I)
@@ -254,14 +254,6 @@ void RemoteControllerFrameWork::OnNetRecv( Cube_SocketUDP_I & __I)
 					{
 						Packet_Client_ExecuteReply Rep=
 							((Packet_Server_ClientTranslate<Packet_Client_ExecuteReply>*)__I.Buffer)->Packet;
-						if (Rep.ExeReply==PACKET_EXEC_REPLY_SUCCEEDED)
-						{
-							printf("Shell执行成功\n");
-						}
-						if (Rep.ExeReply==PACKET_EXEC_REPLY_FAILED)
-						{
-							printf("Shell执行失败\n");
-						}
 						m_ExecFsm=REMOTECONTROLLER_EXEC_FSM_NONE;
 					}
 				}
@@ -283,7 +275,7 @@ void RemoteControllerFrameWork::OnNetRecv( Cube_SocketUDP_I & __I)
 	
 }
 
-void RemoteControllerFrameWork::OnDisconnectCommand( char *String )
+void RemoteControllerFrameWork::OnDisconnectCommand()
 {
 	CubeGrammarSentence Sen;
 	unsigned int SenType;
@@ -324,7 +316,7 @@ void RemoteControllerFrameWork::OnCommandLogin()
 	}
 	else
 	{
-		m_FSM=REMOTECONTROLLER_FSM_NORMAL;
+		m_FSM=REMOTECONTROLLER_FSM_STANDBY;
 		m_HeartBeat.Activate();
 	}
 }
@@ -370,34 +362,11 @@ void RemoteControllerFrameWork::OnEmitControllerHeartbeat()
 	m_Net.Send(__O);
 }
 
-void RemoteControllerFrameWork::OnConnectCommand( char *String )
+void RemoteControllerFrameWork::OnFileConnectCommand( char *String )
 {
 	if (m_FSM!=REMOTECONTROLLER_FSM_CONNECT)
 	{
 		return;
-	}
-	if (strlen(String)>4)
-	{
-		char MSG[5];
-		memcpy(MSG,String,4);
-		MSG[4]='\0';
-
-		if (strcmp(strupr(MSG),REMOTESHELL_CCMD_MSGBOX)==0)
-		{
-			Packet_Client_Message Msg;
-			strcpy(Msg.message,String+4);
-			Packet_Server_ControllerTranslate<Packet_Client_Message> Trans;
-			Trans.ClientIn=m_vClients[m_CurrentOperateClient];
-			Trans.Packet=Msg;
-
-			Cube_SocketUDP_O __O;
-			__O.Buffer=&Trans;
-			__O.Size=sizeof Trans;
-			__O.to=m_ServerAddrin;
-
-			m_Net.Send(__O);
-			return;
-		}
 	}
 	
 	if (strlen(String)>9)
@@ -422,7 +391,7 @@ void RemoteControllerFrameWork::OnConnectCommand( char *String )
 				}
 			}
 	
-			printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");		
+			printf("\n");		
 			if(m_FileIOMaster.m_lastError==PARALLEFILE_LASTERROR_SUCCEED)
  			{
  				printf("文件发送完成                              \n");
@@ -470,11 +439,10 @@ void RemoteControllerFrameWork::OnConnectCommand( char *String )
 		}
 	}
 
-	
-	Packet_Client_CMD CMD;
+	Packet_Client_SHELL CMD;
 	strcpy(CMD.command,String);
 	strcat(CMD.command,"\r\n");
-	Packet_Server_ControllerTranslate<Packet_Client_CMD> Trans;
+	Packet_Server_ControllerTranslate<Packet_Client_SHELL> Trans;
 	Trans.ClientIn=m_vClients[m_CurrentOperateClient];
 	Trans.Packet=CMD;
 
@@ -508,7 +476,7 @@ void RemoteControllerFrameWork::OnPrintLocation()
 			printf("Local:\\>");
 		}
 		break;
-	case REMOTECONTROLLER_FSM_NORMAL:
+	case REMOTECONTROLLER_FSM_STANDBY:
 		{
 			printf("Server:\\>");
 		}
