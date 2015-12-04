@@ -379,6 +379,11 @@ void RemoteControllerFrameWork::OnFileConnectCommand( char *String )
 			strtok(String," ");
 			char *res=strtok(NULL," ");
 			char *Dest=strtok(NULL," ");
+			if (res==NULL||Dest==NULL)
+			{
+				printf("Parameters ERROR\n");
+				return;
+			}
  			m_FileIOMaster.SendFile(res,Dest);
 			while (!m_FileIOMaster.IsTranslationDone())
 			{
@@ -413,6 +418,12 @@ void RemoteControllerFrameWork::OnFileConnectCommand( char *String )
 			strtok(String," ");
 			char *res=strtok(NULL," ");
 			char *Dest=strtok(NULL," ");
+			if (res==NULL||Dest==NULL)
+			{
+				printf("Parameters ERROR\n");
+				return;
+			}
+
 			m_FileIOMaster.RecvFile(res,Dest);
 			while (!m_FileIOMaster.IsTranslationDone())
 			{

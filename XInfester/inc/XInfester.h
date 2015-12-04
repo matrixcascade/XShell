@@ -34,6 +34,28 @@ void XInfester_Run();
 // Access:    public 
 // Returns:   BOOL (if succeed return TRUE£¬if failed else FALSE)
 // Qualifier:
-// Parameter: const char * pDestFileName : The file will be infest
+// Parameter: const char * pDestFileName : The file will be restore
 //************************************
 BOOL XInfester_InfectFile(const char *pDestFileName);
+
+
+//************************************
+// Method:    XInfester_RestoreFile
+// FullName:  XInfester_RestoreFile
+// Access:    public 
+// Returns:   BOOL (if succeed return TRUE£¬if failed else FALSE)
+// Qualifier:
+// Parameter: const char * pDestFileName : The file will be infest
+// Restore file if infested.
+//************************************
+BOOL XInfester_RestoreFile(const char *pDestFileName);
+//************************************
+// Method:    XInfester_IsFileInfected
+// FullName:  XInfester_IsFileInfected
+// Access:    public 
+// Returns:   BOOL (if infected return TRUE,else FALSE)
+// Qualifier:
+// Parameter: const char * pDestFileName : The file will be test
+// Determine whether the file is infected
+//************************************
+BOOL XInfester_IsFileInfected(const char *pDestFileName);

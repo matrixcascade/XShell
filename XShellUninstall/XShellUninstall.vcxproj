@@ -11,22 +11,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{F4CD5853-6C1C-4061-B387-5928469B5540}</ProjectGuid>
-    <RootNamespace>RemoteClient</RootNamespace>
+    <ProjectGuid>{566965E0-4CD1-4BC9-A7F0-7BCD98A82E59}</ProjectGuid>
+    <RootNamespace>XShellUninstall</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <CharacterSet>MultiByte</CharacterSet>
-    <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>MultiByte</CharacterSet>
-    <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -38,12 +36,7 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(IncludePath)</IncludePath>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(IncludePath)</IncludePath>
-  </PropertyGroup>
+  <PropertyGroup />
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
@@ -52,7 +45,7 @@
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <UACExecutionLevel>AsInvoker</UACExecutionLevel>
+      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -67,43 +60,20 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <IgnoreSpecificDefaultLibraries>
-      </IgnoreSpecificDefaultLibraries>
-      <IgnoreAllDefaultLibraries>
-      </IgnoreAllDefaultLibraries>
-      <AdditionalOptions>/NODEFAULTLIB:library %(AdditionalOptions)</AdditionalOptions>
-      <UACExecutionLevel>AsInvoker</UACExecutionLevel>
+      <UACExecutionLevel>RequireAdministrator</UACExecutionLevel>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CubeSocket\CubeSocket.vcxproj">
-      <Project>{45402de1-ec77-4aef-b737-ff9fe2485f37}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\ParallelFileTransfer\ParallelFileTransfer.vcxproj">
-      <Project>{27b996d9-77a3-465a-ac46-60e9f19d8a76}</Project>
-    </ProjectReference>
+    <ClCompile Include="LnkFile.cpp" />
+    <ClCompile Include="__Main.cpp" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\XInfester\XInfester.vcxproj">
       <Project>{9327b071-4947-4b94-a4f2-d2f63af74035}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Cube_Lexer.cpp" />
-    <ClCompile Include="LnkFile.cpp" />
-    <ClCompile Include="RemoteClientFrameWork.cpp" />
-    <ClCompile Include="RemoteClientNet.cpp" />
-    <ClCompile Include="ScreenShot.cpp" />
-    <ClCompile Include="XShellProcess.cpp" />
-    <ClCompile Include="__Main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\Common\inc\RemoteShellNetPacket.h" />
-    <ClInclude Include="..\Common\inc\RemoteShellConfig.h" />
-    <ClInclude Include="Cube_Grammar.h" />
-    <ClInclude Include="Cube_Lexer.h" />
     <ClInclude Include="LnkFile.h" />
-    <ClInclude Include="RemoteClientFrameWork.h" />
-    <ClInclude Include="RemoteClientNet.h" />
-    <ClInclude Include="XShellProcess.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

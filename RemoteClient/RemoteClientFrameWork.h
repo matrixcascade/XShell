@@ -25,7 +25,7 @@ public:
 
 	void OnHeartBeat();
 	void OnNetRecv(Cube_SocketUDP_I&);
-	void OnShellRespones(char *r,int Size);
+	void OnShellRespones(char *r);
 
 	SOCKADDR_IN  GetServerAddrIn(){return m_to;}
 	RemoteClientNet *GetNetInteface(){return &m_Net;}

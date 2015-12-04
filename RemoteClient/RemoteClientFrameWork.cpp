@@ -94,7 +94,7 @@ void RemoteClientFrameWork::OnNetRecv( Cube_SocketUDP_I& __I)
 
 }
 
-void RemoteClientFrameWork::OnShellRespones( char *r,int Size )
+void RemoteClientFrameWork::OnShellRespones( char *r )
 {
 	Packet_Client_Reply Reply;
 	strcpy_s(Reply.Reply,r);

