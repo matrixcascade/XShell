@@ -41,7 +41,7 @@ public:
 	BOOL Initialize();
 	void Run();
 	void OnNormalCommand();
-	void OnFileConnectCommand(char *String);
+	void OnConnectCommand(char *String);
 	void OnDisconnectCommand();
 
 	BOOL WaitForReply();

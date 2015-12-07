@@ -16,7 +16,6 @@ void RemoteServerFrameWork::OnNetRecv( Cube_SocketUDP_I& __I)
 {
 	Packet *pPack=(Packet *)(__I.Buffer);
 
-
 	switch (pPack->TypeFLAG)
 	{
 	case PACKET_TYPEFLAG_CLIENT_HEARTBEAT:

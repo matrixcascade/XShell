@@ -97,7 +97,7 @@ void RemoteControllerFrameWork::OnCommand( char *String )
 			OnExitConnect();
 			return;
 		}
-		OnFileConnectCommand(String);
+		OnConnectCommand(String);
 	}
 	else if(m_FSM==REMOTECONTROLLER_FSM_STANDBY)
 	{
@@ -160,8 +160,9 @@ void RemoteControllerFrameWork::OnCommandList()
 	__O.Size=sizeof List;
 	__O.to=m_ServerAddrin;
 
-	m_Net.Send(__O);
 	m_ExecFsm=REMOTECONTROLLER_EXEC_FSM_LIST;
+	m_Net.Send(__O);
+	
 
 	if(!WaitForReply())
 	{
@@ -186,6 +187,8 @@ void RemoteControllerFrameWork::OnNetRecv( Cube_SocketUDP_I & __I)
 	{
 		return;
 	}
+
+
 	if (!IsServer(__I.in))
 	{
 		return;
@@ -342,6 +345,7 @@ BOOL RemoteControllerFrameWork::WaitForReply()
 		Sleep(100);
 		if ((Time-=100)<0)
 		{
+			
 			m_ExecFsm=REMOTECONTROLLER_EXEC_FSM_NONE;
 			return FALSE;
 		}
@@ -362,7 +366,7 @@ void RemoteControllerFrameWork::OnEmitControllerHeartbeat()
 	m_Net.Send(__O);
 }
 
-void RemoteControllerFrameWork::OnFileConnectCommand( char *String )
+void RemoteControllerFrameWork::OnConnectCommand( char *String )
 {
 	if (m_FSM!=REMOTECONTROLLER_FSM_CONNECT)
 	{
@@ -462,10 +466,9 @@ void RemoteControllerFrameWork::OnFileConnectCommand( char *String )
 	__O.Size=sizeof Trans;
 	__O.to=m_ServerAddrin;
 
+	m_ExecFsm=REMOTECONTROLLER_EXEC_FSM_CMDEXEC;
 	m_Net.Send(__O);
 	
-	m_ExecFsm=REMOTECONTROLLER_EXEC_FSM_CMDEXEC;
-
 	if(!WaitForReply())
 	{
 		m_ExecFsm=REMOTECONTROLLER_EXEC_FSM_NONE;
