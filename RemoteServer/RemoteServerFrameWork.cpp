@@ -1,4 +1,14 @@
 #include "RemoteServerFrameWork.h"
+#include <time.h>
+
+char *GetTimeString()
+{
+	time_t t = time(0); 
+	static char tmp[64]; 
+	strftime( tmp, sizeof(tmp), "%Y/%m/%d %X",localtime(&t) );
+	return tmp;
+}
+
 
 RemoteServerFrameWork G_RemoteFrameWork;
 
@@ -26,7 +36,9 @@ void RemoteServerFrameWork::OnNetRecv( Cube_SocketUDP_I& __I)
 		Packet_Server_ClientTranslate<Packet_Client_ExecuteReply> ErReply;
 		ErReply.ClientIn=__I.in;
 		memcpy(&ErReply.Packet,__I.Buffer,__I.Size);
-		printf("<TRANS> 客户端命令执行转发\n");
+		printf("<TRANS> 客户端命令执行转发  ");
+		printf(GetTimeString());
+		printf("\n");
 		EmitToController(&ErReply,sizeof(ErReply));
 		}
 		break;
@@ -35,7 +47,9 @@ void RemoteServerFrameWork::OnNetRecv( Cube_SocketUDP_I& __I)
 		Packet_Server_ClientTranslate<Packet_Client_Reply> CrReply;
 		CrReply.ClientIn=__I.in;
 		memcpy(&CrReply.Packet,__I.Buffer,__I.Size);
-		printf("<TRANS> 客户端执行转发\n");
+		printf("<TRANS> 客户端执行转发");
+		printf(GetTimeString());
+		printf("\n");
 		EmitToController(&CrReply,sizeof(CrReply));
 		}
 		break;
@@ -58,7 +72,9 @@ void RemoteServerFrameWork::OnNetRecv( Cube_SocketUDP_I& __I)
 			{
 			Packet_Client_SHELL cmdPack=
 				((Packet_Server_ControllerTranslate<Packet_Client_SHELL> *)__I.Buffer)->Packet;
-			printf("<TRANS>控制端SHELL转发:%s",cmdPack.command);
+			printf("<TRANS>控制端SHELL转发:%s TimeStamp：",cmdPack.command);
+			printf(GetTimeString());
+			printf("\n");
 			EmitToClient(in,&cmdPack,sizeof Packet_Client_SHELL);
 			}
 			break;
@@ -161,7 +177,9 @@ void RemoteServerFrameWork::OnClientLogin( Cube_SocketUDP_I & __I)
 
 	m_vClient.push_back(Client);
 
-	printf("客户端上线 %s:%d\n",inet_ntoa(__I.in.sin_addr),__I.in.sin_port);
+	printf("客户端上线 %s:%d  ",inet_ntoa(__I.in.sin_addr),__I.in.sin_port);
+	printf(GetTimeString());
+	printf("\n");
 
 }
 
@@ -182,14 +200,18 @@ void RemoteServerFrameWork::OnControllerLogin( Cube_SocketUDP_I & __I)
 {
 	Packet_Server_LoginReply Reply;
 
-	printf("客户端登陆请求:来自:%s\n",inet_ntoa(__I.in.sin_addr));
+	printf("客户端登陆请求:来自:%s   ",inet_ntoa(__I.in.sin_addr));
+	printf(GetTimeString());
+	printf("\n");
 
 	if (m_Login)
 	{
 		if (__I.in.sin_addr.S_un.S_addr==m_SockAddrController.sin_addr.S_un.S_addr)
 		{
 			Reply.IdentifyResult=PACKET_LOGINRESULT_SUCCEEDED;
-			printf("已签入的控制端\n");
+			printf("已签入的控制端   ");
+			printf(GetTimeString());
+			printf("\n");
 			EmitToController(&Reply,sizeof Reply);
 		}
 
@@ -202,12 +224,16 @@ void RemoteServerFrameWork::OnControllerLogin( Cube_SocketUDP_I & __I)
 		m_SockAddrController=__I.in;
 		m_Login=true;
 		Reply.IdentifyResult=PACKET_LOGINRESULT_SUCCEEDED;
-		printf("验证已通过,控制端已签入:%s\n",inet_ntoa(__I.in.sin_addr));
+		printf("验证已通过,控制端已签入:%s   ",inet_ntoa(__I.in.sin_addr));
+		printf(GetTimeString());
+		printf("\n");
 		m_ControllerLive.Activate();
 	}
 	else
 	{
-		printf("无法验证的控制端,拒绝签入:%s\n",inet_ntoa(__I.in.sin_addr));
+		printf("无法验证的控制端,拒绝签入:%s   ",inet_ntoa(__I.in.sin_addr));
+		printf(GetTimeString());
+		printf("\n");
 		Reply.IdentifyResult=PACKET_LOGINRESULT_FAILED;
 	}
 	EmitToController(&Reply,sizeof Reply);
@@ -262,7 +288,9 @@ void RemoteServerFrameWork::run()
 		{
 			if (TickTime-m_vClient[i].LastHeartBeatTime>REMOTESHELL_LIVE_TIME)
 			{
-				printf("客户端已离线:%s:%d\n",inet_ntoa(m_vClient[i].In.sin_addr),m_vClient[i].In.sin_port);
+				printf("客户端已离线:%s:%d   ",inet_ntoa(m_vClient[i].In.sin_addr),m_vClient[i].In.sin_port);
+				printf(GetTimeString());
+				printf("\n");
 				m_vClient.erase(m_vClient.begin()+i);
 				i--;
 			}
@@ -274,7 +302,9 @@ void RemoteServerFrameWork::run()
 
 void RemoteServerFrameWork::OnControllerList()
 {
-	printf("<CMD> 控制端请求列表数据\n");
+	printf("<CMD> 控制端请求列表数据   ");
+	printf(GetTimeString());
+	printf("\n");
 	if (!m_vClient.size())
 	{
 		Packet_Controller_List List;
@@ -296,7 +326,9 @@ void RemoteServerFrameWork::OnControllerList()
 		EmitToController(&List,sizeof Packet_Controller_List);
 	}
 	CubeLeaveCriticalSection(&m_cs);
-	printf("<REP> 已回复列表\n");
+	printf("<REP> 已回复列表   ");
+	printf(GetTimeString());
+	printf("\n");
 }
 
 void RemoteServerFrameWork::OnControllerHeartbeat()
@@ -309,8 +341,9 @@ void RemoteServerFrameWork::OnControllerHeartbeat()
 void RemoteServerFrameWork::OnControllerDisconnect()
 {
 	m_Login=false;
-	printf("控制端离线:%s : %d\n",inet_ntoa(m_SockAddrController.sin_addr),m_SockAddrController.sin_port);
-
+	printf("控制端离线:%s : %d   ",inet_ntoa(m_SockAddrController.sin_addr),m_SockAddrController.sin_port);
+	printf(GetTimeString());
+	printf("\n");
 }
 
 BOOL RemoteServerFrameWork::IsController( SOCKADDR_IN in )
@@ -351,7 +384,9 @@ void RemoteServerFrameWork::OnControllerFileIOTrans( void *Buffer,int size )
 			Packet_Server_ControllerTranslate<PARALLELFILE_PACKET_CCMD_CONNECT> Trans;
 			Trans=*((Packet_Server_ControllerTranslate<PARALLELFILE_PACKET_CCMD_CONNECT> *)Buffer);
 			EmitToClient(Trans.ClientIn,&Trans.Packet,sizeof PARALLELFILE_PACKET_CCMD_CONNECT);
-			printf("<TRANS>控制端连接请求转发\n%s  SIZE:%d bytes\n",Trans.Packet.FileName,Trans.Packet.size);
+			printf("<TRANS>控制端连接请求转发\n%s  SIZE:%d bytes   ",Trans.Packet.FileName,Trans.Packet.size);
+			printf(GetTimeString());
+			printf("\n");
 		}
 		break;
 	case PARALLELFILE_MAGIC_BINREQUEST:

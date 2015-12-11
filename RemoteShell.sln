@@ -17,6 +17,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PEStructure", "PEStructure\
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XShellUninstall", "XShellUninstall\XShellUninstall.vcxproj", "{566965E0-4CD1-4BC9-A7F0-7BCD98A82E59}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XShellRedirCaller", "XShellRedirCaller\XShellRedirCaller.vcxproj", "{D3CFFB06-01D1-4DE1-B942-3F3A11C31423}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "XShellRedirCallerMakeTool", "XShellRedirCallerMakeTool\XShellRedirCallerMakeTool.vcxproj", "{4554CA51-167F-414F-87EB-ABBC533254E0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -55,6 +59,14 @@ Global
 		{566965E0-4CD1-4BC9-A7F0-7BCD98A82E59}.Debug|Win32.Build.0 = Debug|Win32
 		{566965E0-4CD1-4BC9-A7F0-7BCD98A82E59}.Release|Win32.ActiveCfg = Release|Win32
 		{566965E0-4CD1-4BC9-A7F0-7BCD98A82E59}.Release|Win32.Build.0 = Release|Win32
+		{D3CFFB06-01D1-4DE1-B942-3F3A11C31423}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D3CFFB06-01D1-4DE1-B942-3F3A11C31423}.Debug|Win32.Build.0 = Debug|Win32
+		{D3CFFB06-01D1-4DE1-B942-3F3A11C31423}.Release|Win32.ActiveCfg = Release|Win32
+		{D3CFFB06-01D1-4DE1-B942-3F3A11C31423}.Release|Win32.Build.0 = Release|Win32
+		{4554CA51-167F-414F-87EB-ABBC533254E0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4554CA51-167F-414F-87EB-ABBC533254E0}.Debug|Win32.Build.0 = Debug|Win32
+		{4554CA51-167F-414F-87EB-ABBC533254E0}.Release|Win32.ActiveCfg = Release|Win32
+		{4554CA51-167F-414F-87EB-ABBC533254E0}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
